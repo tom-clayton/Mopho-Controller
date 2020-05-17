@@ -3,7 +3,7 @@
 #
 #  main.py
 #  
-#  Copyright 2017 tom <tom@crunchbang>
+#  Copyright 2020 tom clayton <clayton_tom@yahoo.com>
 #  
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -22,10 +22,7 @@
 #  
 #
   
-import os
-import struct
-
-import alsaseq
+import midi_interface
 
 from kivy.app import App
 from kivy.properties import NumericProperty, StringProperty,\
@@ -43,19 +40,18 @@ from kivy.uix.popup import Popup
 from kivy.uix.behaviors import ToggleButtonBehavior
 from kivy.clock import Clock
 #from kivy.factory import Factory
+from kivy.lang import Builder
 
-VERBOSE = True
+Builder.load_file('Mopho.kv')
 
 notes = ('C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B')
 
-# Unique to mopho: 
+# Unique to mopho: ( could these somehow go in kv file?)
 options = {'glide': ('Fixed rate', 'Fixed rate auto', 'Fixed time', 
-                     'Fixed time auto'
-                     ),
+                     'Fixed time auto'),
            'key_assign': ('Low Note', 'Low Note, re-trigger', 'High Note',
                           'High Note, re-triggger', 'Last Note', 
-                          'Last Note, re-triggger'
-                          ),
+                          'Last Note, re-triggger'),
            'destinations': ('Off', 'Osc 1 Freq', 'Osc 2 Freq', 
                             'Osc 1 and 2 Freq', 'Osc Mix', 'Noise Level',
                             'Osc 1 Pulse Width', 'Osc 2 Pulse Width', 
@@ -72,54 +68,34 @@ options = {'glide': ('Fixed rate', 'Fixed rate auto', 'Fixed time',
                             'Env 3 Release', 'All Env Releases', 'Mod 1 Amt', 
                             'Mod 2 Amt', 'Mod 3 Amt', 'Mod 4 Amt', 
                             'External Audio In Level', 'Sub Osc 1 Level', 
-                            'Sub Osc 2 Level'
-                            ),
+                            'Sub Osc 2 Level'),
            'time_syncs': ('32 Step', '16 Step', '8 Step', '6 Step', '4 Step', 
                           '3 Step', '2 Step', '1.5 Step', '1 Step', 
                           '2/3 Steps', '1/2 Step', '1/3 Steps', '1/4 Step', 
-                          '1/6 Step', '1/8 Step', '1/16 Step'
-                          ),
+                          '1/6 Step', '1/8 Step', '1/16 Step'),
            'lfo_shapes': ('Triangle', 'Rev. Saw.', 'Sawtooth', 'Square', 
-                          'Random'
-                          ),
+                          'Random'),
            'sources': ('Off', 'Sequence Track 1', 'Sequence Track 2', 
                        'Sequence Track 3', 'Sequence Track 4', 'LFO 1', 
                        'LFO 2', 'LFO 3', 'LFO 4', 'Filter Envelope', 
                        'Amp Envelope', 'Envelope 3', 'Pitch Bend', 'Mod Wheel',
                        'Pressure', 'MIDI Breath', 'MIDI Foot', 
                        'MIDI Expression', 'Velocity', 'Note Number', 'Noise', 
-                       'Audio In Envelope Follower', 'Audio In Peak Hold'
-                       )
-           }
-                      
+                       'Audio In Envelope Follower', 'Audio In Peak Hold')}
+                       
+# Unique to mopho: ( could these somehow go in kv file?)                     
 nrpn_numbers = (0, 1, 2, 3, 4, 114, 5, 6, 7, 8, 9, 115, 10, 11, 12, 93, 96, 13,
                 14, 116, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 
                 30, 31, 32, 33, 34, 35, 36, 29, 37, 38, 39, 40, 41, 42, 43, 44,
                 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59,
                 60, 61, 62, 63, 64, 98, 65, 66, 67, 68, 69, 70, 71, 72, 73,
-                74, 75, 76, 81, 82
-                )
-
-
-
+                74, 75, 76, 81, 82)
 
 
 class MainScreen(BoxLayout):
     """The main screen."""
+    pass
     
-    def send_program(self):
-        """Sends value for every main controller."""
-        for controller in main_controllers:
-            controller.send_midi_cc()
-    
-    def request_edit_buffer(self): # not working, manually request from synth
-        """Sends request edit buffer sys ex message"""
-        
-        print ("sending sysex")
-        # unique to mopho:
-        midi_event = (130, 1, 0, 253, (0, 0), (0, 0), (0,0), 
-                      "\xF0\x01\x25\x06\xF7")
-        alsaseq.sysex(midi_event)
 
 class BaseController(BoxLayout):
     """Controller base class
@@ -132,17 +108,17 @@ class BaseController(BoxLayout):
        
        It's value may be bounded by a minimum and a maximum.
        
-       Offset is used if the value does not corespond to the midi value to be 
-       sent. i.e. a contoller that can have a negative value.
+       Offset is used if the value does not corespond to the midi value 
+       to be sent. i.e. a contoller that can have a negative value.
        
-       If multiple controllers control the same parameter, one will be the main
-       controller and the rest will be sub-controllers, only the main 
-       controller will send midi, a sub-controller must do it through the main 
-       controller.
+       If multiple controllers control the same parameter, one will be 
+       the main controller and the rest will be sub-controllers, only 
+       the main controller will send midi, a sub-controller must do it 
+       through the main controller.
        
-       A controller's midi output is paused when recieving to stop repetition
-       of the changes. 
        """ 
+    
+    # Default controller properties. Set by kv file if different:
     name = StringProperty("")
     nrpn_number = NumericProperty(0)
     value = NumericProperty(0)
@@ -154,87 +130,49 @@ class BaseController(BoxLayout):
     
     def __init__(self, **kwargs):
         super(BaseController, self).__init__(**kwargs)
-        controllers.append(self)
-        self.pause_midi = False
+        raw_controllers.append(self)
         self.bind(on_value=self.on_value)
 
-    def on_value(self, x , y):
+    def on_value(self, *args):
         """Responds to a change in controller value.
         
-           Sends controller value if midi is not paused. 
            Displays chosen value if approriate for controller.
-           Arguments x and y are ignored.
            """
-        print (self, self.is_sub_controller)
-        if self.is_sub_controller:
-            return
-        if self.pause_midi:
-            self.pause_midi = False
-        else:
-            self.send_midi_cc()
-        if type(self) in (ToggleController, SwitchController, \
+	
+        # Display new setting if required:    
+        if type(self) in (ToggleController, SwitchController,
                             DropDownController):
             self.display_selected()
-            
-    def send_midi_cc(self):
-        """Constructs and sends control change midi message"""
-        value = self.value + self.offset
-        midi_event = []
         
-        # (type, flags, tag, queue, time stamp, source, destination, data)
-        midi_event.append((10, 1, 0, 253, (0, 0), (0, 0), (0,0), 
-                           (0, 0, 0, 0, 0x63, self.nrpn_number >> 7 & 0x7F)
-                           )
-                          )
-        midi_event.append((10, 1, 0, 253, (0, 0), (0, 0), (0,0),
-                           (0, 0, 0, 0, 0x62, self.nrpn_number & 0x7F)
-                           )
-                          )
-        midi_event.append((10, 1, 0, 253, (0, 0), (0, 0), (0,0), 
-                           (0, 0, 0, 0, 0x06, value >> 7 & 0x7F)
-                           )
-                          )
-        midi_event.append((10, 1, 0, 253, (0, 0), (0, 0), (0,0), 
-                           (0, 0, 0, 0, 0x26, value & 0x7F)
-                           )
-                          )
-        for line in midi_event:
-            alsaseq.output(line)
-        if VERBOSE:
-            print ("sent", self)
+        # Only send midi if it is a main_controller:
+        if self.is_sub_controller:
+            return
         
-    def loaded(self, value):
-        """Controller's value is set as loaded from file."""
-        self.pause_midi = True
-        self.value = value
-        if VERBOSE:
-            print ("loaded", self) 
+        midi.send_cc(self)
         
-    def recieved_midi(self, value):
-        """Controller's value is set as recieved from synth."""
-        self.pause_midi = True
-        self.value = value - self.offset
-        if VERBOSE:
-            print ("recieved", self)      
+        # Remember the prev value to allow midi class to check if value
+        # only changes by one, allowing the use of more efficient midi
+        # messaging available in some synths.
+        self.prev_value = self.value
+
+    # Needed??:    
+    # def loaded(self, value):
+        # """Controller's value is set as loaded from file."""
+        # self.value = value
+        # if VERBOSE:
+            # print ("loaded", self) 
     
-    # sort this out done??
-    #def change_controller_value(self, name, value):
-    #    #print name, value
-    #    for controller in controllers:
-    #        try:
-    #            if controller.name == name:
-    #                controller.recieved_midi(value)
-    #        except AttributeError:
-    #            pass
+    def set_value(self, value): # is this Even Needed?
+        """Sets Controller's value."""
+        self.value = value     
 
     def display_selected(self):
         """Highlight selected value for appropriate controller types."""    
         for child in [c for c in self.children if isinstance(c, Button)]:
             child.state = 'down' if self.value in child.values else 'normal'
     
-    def notes(self, value):
+    def note(self, value):
         """Returns value as musical note."""
-        #print value
         return notes[value%12] + str(value/12)
     
     def __repr__(self):
@@ -251,7 +189,7 @@ class SlideController(BaseController):
 
 
 class SwitchController(BaseController):
-    """A switch type controller.
+    """A switch type controaller.
     
        The value is changed by clicking/touching the appropriate button.
        """
@@ -294,7 +232,6 @@ class TouchController(BaseController):
         if touch.grab_current is self:
             self.value = self.bound_check(int(self.value + touch.dy))    
 
-     
     def on_up(self, wid, touch):
         """Releases 'grab' of touch event on click/touch up."""
         if touch.grab_current is self:
@@ -325,7 +262,7 @@ class DropDownController(BaseController):
             btn = Button(text=option, size_hint_y=None, height=30)
             btn.bind(on_release=lambda btn: self.dropdown.select(btn.text))
             self.dropdown.add_widget(btn)
-        self.button.bind(on_release=self.dropdown.open)
+        self.button.bind(on_noterelease=self.dropdown.open)
         self.dropdown.bind(on_select=self.select_option)
         self.display_selected()
 
@@ -342,94 +279,48 @@ class DropDownController(BaseController):
             self.button.state = 'down'
     
 
-class MyApp(App):
+class Mopho(App):
     """The main application"""
+    
     def on_start(self):
         """Controller initialisation.
         
            Calls setup for all drop down controllers.
-           Creates list of main controllers in order as they are dumped from
-           synth.
+           Creates list of main controllers in order as they are 
+           dumped from synth, registers these with midi class.
            """
-        for controller in controllers:
+        self.controllers = raw_controllers
+        for controller in raw_controllers:
             if isinstance(controller, DropDownController):
                 controller.setup(0)
-        global main_controllers
-        main_controllers = []
+        
+        self.main_controllers = []
         for nrpn in nrpn_numbers:
-            main_controllers.append([c for c in controllers if
+            self.main_controllers.append([c for c in raw_controllers if
                                     not c.is_sub_controller
                                     and c.nrpn_number == nrpn][0])
+        
+        midi.register_controllers(self.main_controllers)
                                     
     def build(self):
         """Builds the main screen from kv file and returns it to kivy."""
         return MainScreen()
 
 
-def check_midi(dt):
-    """Recieves incoming midi"""
-    if alsaseq.inputpending():
-        event = alsaseq.input()
-        if event[0] == 10:
-            control_change(event)
-        elif event[0] == 130:
-            sys_ex(event)
-
-
-def control_change(event):
-    """Recieves control change midi event.
-    
-       Sets relevent contoller value.
-       """ 
-    cc_data = [event[-1][-1]]
-    while len(cc_data) < 4:
-        event = alsaseq.input()
-        cc_data.append(event[-1][-1])
-    nrpn = cc_data[0] << 7 | cc_data[1]
-    value = cc_data[2] << 7 | cc_data[3]
-    [c.recieved_midi(value) for c in main_controllers if c.nrpn_number == nrpn]
-
-
-def sys_ex(event):
-    """Recieves system exclusive midi event.
-    
-       Recieves data in two chunks.
-       Strips packing bytes.
-       Sets values for all relevent controllers.
-       """
-    # unique to mopho: needs fixing
-    program_dump = True if event[-1][-1][3] == '\x02' else False
-    first_data = event[-1][-1][6 if program_dump else 4:]
-    event = alsaseq.input()
-    second_data = event[-1][-1][6 if program_dump else 4:]
-    packed_data = map(ord, first_data + second_data)
-    unpacked_data = []
-    for i, data in enumerate(packed_data):
-        if i % 8 == 0:
-            packing_byte = data
-        else:
-            unpacked_data.append(128 + data if packing_byte & (1 << ((i%8)-1)) else data)
-
-    #for i in (i for i in range(len(packed_data)) if i % 8):
-    #    unpacked_data.append(packed_data[i]) 
-    for param, value in enumerate(unpacked_data):
-        #print param, value
-        try:
-            main_controllers[param].recieved_midi(value)
-        except IndexError:
-            pass
-        
 
 def main():
-    alsaseq.client('Mopho control', 1, 1, False)
-    #alsaseq.connectfrom(0, 28, 0)
-    #alsaseq.connectto(1, 28, 0)
-
-    global controllers
-    controllers = []
-    #last_cc_recieved = None
-    clock = Clock.schedule_interval(check_midi, 0.01)
-    MyApp().run()
+	global midi
+	midi = midi_interface.Midi()
+	
+	# raw_controllers is only global so classes created by kv file can
+	# register themselves. mopho.controllers should be used to access
+	# them. (Maybe they can be registered by looking them up using the 
+	# kivy api in mopho.on_start() instead?)
+	global raw_controllers 
+	raw_controllers = [] 
+	clock = Clock.schedule_interval(midi.check_midi, 0.01)
+	mopho = Mopho()
+	mopho.run()
     
     
 if __name__ == '__main__':
