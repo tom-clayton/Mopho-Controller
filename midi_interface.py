@@ -31,15 +31,16 @@ DEBUG_OUTPUT = True
 
 class Midi():
     
-    def __init__(self):
+    def __init__(self, synth):
         """Sets up midi interface"""
-        alsaseq.client('Mopho control', 1, 1, False)
+        alsaseq.client('Synth Control', 1, 1, False)
         
         # auto-connect:
         alsaseq.connectfrom(0, 28, 0)
         alsaseq.connectto(1, 28, 0)
         
-        self.last_controller_recieved = None
+        self.synth = synth
+        self.midi_out_paused = False
         
 
     def register_controllers(self, controllers):
@@ -55,33 +56,25 @@ class Midi():
         """Sends out midi data for controller unless controller change
            was due to incoming midi."""
 
-        # Check if midi was due to incoming midi:
-        if controller == self.last_controller_recieved:
-            self.last_controller_recieved = None
+        # Midi out will be paused if message was due to incoming midi:
+        if self.midi_out_paused:
+            self.midi_out_paused = False
             return
         
-        # here we will check if controller has only changed by one to 
+        # here we could check if controller has only changed by one to 
         # make use of more efficient midi messaging available in some 
         # synths.
         
-        value = controller.value + controller.offset
+        value = controller.get_value()
         
-        # 4 messages per cc, unique to mopho
-        alsaseq.output((10, 1, 0, 253, (0, 0), (0, 0), (0,0), 
-                            (0, 0, 0, 0, 0x63, 
-                            controller.nrpn_number >> 7 & 0x7F)))
-                            
-        alsaseq.output((10, 1, 0, 253, (0, 0), (0, 0), (0,0),
-                            (0, 0, 0, 0, 0x62, 
-                            controller.nrpn_number & 0x7F)))
-                            
-        alsaseq.output((10, 1, 0, 253, (0, 0), (0, 0), (0,0), 
-                            (0, 0, 0, 0, 0x06, 
-                            value >> 7 & 0x7F)))
-                            
-        alsaseq.output((10, 1, 0, 253, (0, 0), (0, 0), (0,0), 
-                            (0, 0, 0, 0, 0x26, 
-                            value & 0x7F)))
+        # Send out the midi message(s).
+        # synth class will encode the midi messages, it will return a 
+        # tuple of a 2 byte bytes objects for each message. One byte for
+        # each cc data byte.
+        for message in self.synth.encode_cc(controller.nrpn, value):
+            alsaseq.output((10, 1, 0, 253, (0, 0), (0, 0), (0,0), 
+                            (0, 0, 0, 0, message[0], message[1]))) 
+        
         if DEBUG_OUTPUT:
             print("sent", controller)
 
@@ -91,18 +84,16 @@ class Midi():
             self.send_cc(controller)
     
     def request_current_program(self): 
-        """Sends request edit buffer sys ex message"""
+        """Sends request for the current program data"""
         
-        # make a send sysex function
-        
-        # unique to mopho:
-        print ("sending sysex")
+        request = b'\xF0' + self.synth.current_program_dump_request \
+                    + b'\xF7'           
         alsaseq.output((130, 0, 0, 253, (0, 0), (0, 0), (0,0), 
-                        (b'\xF0\x01\x25\x06\xF7',)))
+                        (request,)))
         
     # ----------------------------------------------------- #
     #                   MIDI IN METHODS                     #
-    # ------------------------print("lcr", self.last_controller_recieved)----------------------------- #
+    # ----------------------------------------------------- #
     
 
     def check_midi(self, dt):
@@ -122,23 +113,32 @@ class Midi():
            Sets last_controller_recevied so received message is not
            sent back out.
            """ 
-
-        # uinque to mopho (comes in four messages)
-        cc_data = [event[-1][-1]]
-        while len(cc_data) < 4:
+        
+        # Strip data from messages, combine and send to synth class:
+        n_messages = self.synth.cc_message_chunks
+        
+        data = bytes([event[-1][-1]])
+        while len(data) < n_messages:
             event = alsaseq.input()
-            cc_data.append(event[-1][-1])
-        nrpn = cc_data[0] << 7 | cc_data[1]
-        value = cc_data[2] << 7 | cc_data[3]
+            if event[0] == alsaseq.SND_SEQ_EVENT_CONTROLLER:
+                data += bytes([event[-1][-1]])
+        nrpn, value = self.synth.decode_cc(data)
         
-        controller = [c for c in self.controllers \
-                        if c.nrpn_number == nrpn][0]
-         
-        self.last_controller_recieved = controller
-        controller.value = value - controller.offset
+        try:
+            # Look up controller:
+            controller = self.controller_from_nrpn(nrpn)
         
-        if DEBUG_OUTPUT:
-            print("received", controller)
+            # Pause midi out, so received message isn't sent back out 
+            # when controller value is updated:
+            self.midi_out_paused = True
+            controller.set_value(value)
+        
+            if DEBUG_OUTPUT:
+                print("received", controller)
+                
+        except IndexError:
+            pass
+
 
     def receive_sysex(self, event):
         """Recieves system exclusive midi event.
@@ -146,35 +146,55 @@ class Midi():
            Recieves data in two chunks.
            Strips packing bytes.
            Sets values for all relevent controllers.
-           """
-        # unique to mopho: needs fixing
-        print (event[-1][-1])
-        return
-        program_dump = True if event[-1][-1][3] == '\x02' else False
-        first_data = event[-1][-1][6 if program_dump else 4:]
-        event = alsaseq.input()
-        second_data = event[-1][-1][6 if program_dump else 4:]
-        packed_data = map(ord, first_data + second_data)
-        unpacked_data = []
-        for i, data in enumerate(packed_data):
-            if i % 8 == 0:
-                packing_byte = data
-            else:
-                unpacked_data.append(128 + data if packing_byte & (1 << ((i%8)-1)) else data)
+           """   
 
-        #for i in (i for i in range(len(packed_data)) if i % 8):
-        #    unpacked_data.append(packed_data[i]) 
-        for param, value in enumerate(unpacked_data):
-            #print param, value
+        # Check if message is a program dump:    
+        if not self.synth.is_program_dump(event[-1][1:-1]):
+            print("Unidentified sysex message.")
+            return
+        
+       
+        # Strip data from messages and combine:
+        data = event[-1][1:-1]
+        
+        total_chunks = self.synth.program_dump_message_chunks
+        n_chunks = 1
+        
+        while n_chunks < total_chunks:
+            event = alsaseq.input()
+            if event[0] == alsaseq.SND_SEQ_EVENT_SYSEX:
+                data += event[-1]
+                n_chunks += 1
+        
+        # Unpack program into list of integers:
+        unpacked_data = self.synth.unpack_program_data(data)
+        
+        # Set controllers in correct order:
+        for index, nrpn in enumerate(self.synth.nrpn_numbers):
+            value = unpacked_data[index]
             try:
-                controllers[param].recieved_midi(value)
+                controller = self.controller_from_nrpn(nrpn)
             except IndexError:
                 pass
                 
-   
-    
-
+            self.midi_out_paused = True
+            controller.set_value(value) 
+ 
+    def controller_from_nrpn(self, nrpn):
+        controllers_found =  [c for c in self.controllers \
+                                    if c.nrpn == nrpn]
+                                
+        if len(controllers_found) == 0:
+            print ("No controller found for nrpn ", nrpn)
+        elif len(controllers_found) > 1:
+            print ("Warning: Multiple top level controllers found for nrpn",
+                    nrpn)
+            print ("Using: ", controllers_found[0])
+            for controller in controllers_found[1:]:
+                print("Ignoring: ", controller)
         
+        return controllers_found[0]  
+
 def main(args):
     return 0
 

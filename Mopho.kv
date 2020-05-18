@@ -135,7 +135,6 @@
     
 <MainScreen>:    
     orientation: 'vertical'
-    
     BoxLayout:
         size_hint_y: 0.15
         Label:
@@ -152,7 +151,7 @@
         Button:
             size_hint_x: 0.2
             text: 'Recieve'
-            on_press: root.request_edit_buffer()
+            on_press: root.request_current_program()
     BoxLayout:
         # Row 1:
         orientation: 'horizontal'
@@ -167,7 +166,7 @@
                         id: shape1
                         orientation: 'horizontal'
                         name: 'Osc 1 Shape'
-                        nrpn_number: 2
+                        nrpn: 2
                         #on_value: width1.value = 0 if self.value < 4 else self.value - 4
                         MultiToggle:
                             text: 'Off'
@@ -190,7 +189,7 @@
                         size_hint_x: 0.2
                         name: 'Pulse Width'
                         id: width1
-                        nrpn_number: 2
+                        nrpn: 2
                         is_sub_controller: True
                         maximum: 99 
                         on_value: shape1.value = self.value + 4  
@@ -198,28 +197,28 @@
                     orientation: 'horizontal'
                     TouchController:
                         name: 'Osc 1: Freq'
-                        nrpn_number: 0
+                        nrpn: 0
                         maximum: 120
                         display_function: self.note
                     HSlideController:
                         size_hint_x: 2
                         name: 'Osc 1 Fine'
-                        nrpn_number: 1
+                        nrpn: 1
                         #value: self.value.set_min(-50)
                         minimum: -50
                         maximum: 50
                         offset: 50
                     ToggleController:
                         name: 'Keyboard'
-                        nrpn_number: 4
+                        nrpn: 4
                     TouchController:
                         name: 'Glide'
-                        nrpn_number: 3
+                        nrpn: 3
             VSlideController:
                 size_hint_x: 0.1
                 name: 'Sub Osc'
                 param_number: 5 # Remove?????????????
-                nrpn_number: 114 
+                nrpn: 114 
             
         Module: # ---------------- Osc 2 --------------------#
             orientation: 'horizontal'
@@ -232,7 +231,7 @@
                         orientation: 'horizontal'
                         name: 'Osc 2 Shape'
                         id: shape2 
-                        nrpn_number: 7
+                        nrpn: 7
                         #on_value: width2.value = 0 if self.value < 4 else self.value - 4
                         MultiToggle:
                             text: 'Off'
@@ -255,7 +254,7 @@
                         size_hint_x: 0.2
                         name: 'Pulse Width'
                         id: width2
-                        nrpn_number: 7
+                        nrpn: 7
                         is_sub_controller: True
                         maximum: 99  
                         on_value: shape2.value = self.value + 4 
@@ -264,26 +263,26 @@
                     orientation: 'horizontal'
                     TouchController:
                         name: 'Osc 2: Freq'
-                        nrpn_number: 5
+                        nrpn: 5
                         maximum: 120
                         display_function: self.note
                     HSlideController:
                         size_hint_x: 2
                         name: 'Osc 2 Fine'
-                        nrpn_number: 6
+                        nrpn: 6
                         minimum: -50
                         maximum: 50
                         offset: 50
                     ToggleController:
                         name: 'Keyboard'
-                        nrpn_number: 9
+                        nrpn: 9
                     TouchController:
                         name: 'Glide'
-                        nrpn_number: 8
+                        nrpn: 8
             VSlideController:
                 size_hint_x: 0.1
                 name: 'Sub Osc'
-                nrpn_number: 115
+                nrpn: 115
         Module: #----------------Mixer-------------------#
             orientation: 'horizontal'
             size_hint_x: 0.8
@@ -291,40 +290,40 @@
                 orientation: 'vertical'
                 HSlideController:
                     name: 'Osc Mix'
-                    nrpn_number: 13
+                    nrpn: 13
                 BoxLayout:
                     orientation: 'horizontal'
                     ToggleController:
                         name: 'Sync'
-                        nrpn_number: 10
+                        nrpn: 10
                     TouchController:
                         name: 'Slop'
-                        nrpn_number: 12
+                        nrpn: 12
                         maximum: 5
                     TouchController:
                         name: 'Bend'
-                        nrpn_number: 93
+                        nrpn: 93
                         maximum: 12
                     TouchController:
                         #size_hint_x: 0.2
                         name: 'Input'
-                        nrpn_number: 116  
+                        nrpn: 116  
                 #BoxLayout:
                     #orientation: 'horizontal'
                 DropDownController:
                     name: 'Glide:'
-                    nrpn_number: 11
+                    nrpn: 11
                     option_list: 'glide'
                     always_on: True
                 DropDownController:
                     name: 'Key Assign Priority:'
-                    nrpn_number: 96
+                    nrpn: 96
                     option_list: 'key_assign'
                     always_on: True
             VSlideController:
                 size_hint_x: 0.2
                 name: 'Noise'
-                nrpn_number: 14   
+                nrpn: 14   
     BoxLayout:
         # Row 2
         orientation: 'horizontal'
@@ -339,7 +338,7 @@
                     size_hint_y: 1.5
                 SwitchController:
                     name: 'filter poles'
-                    nrpn_number: 19
+                    nrpn: 19
                     value: 0
                     MultiToggle:
                         text: '2'
@@ -350,47 +349,47 @@
                         values: [1]   
                 TouchController:
                     name: 'Keyboard'
-                    nrpn_number: 17
+                    nrpn: 17
                 TouchController:
                     name: 'Mod'
-                    nrpn_number: 18
+                    nrpn: 18
                 TouchController:
                     name: 'Velocity'
-                    nrpn_number: 21        
+                    nrpn: 21        
             VSlideController:
                 size_hint_x: 0.2
                 name: 'Cut Off'
-                nrpn_number: 15
+                nrpn: 15
                 maximum: 164
             VSlideController:
                 size_hint_x: 0.2
                 name: "Resonance"
-                nrpn_number: 16
+                nrpn: 16
             BoxLayout:
                 orientation: 'vertical'
                 BoxLayout:
                     orientation: 'horizontal'
                     VSlideController:
                         name: 'Delay'
-                        nrpn_number: 22
+                        nrpn: 22
                     VSlideController:
                         name: 'Attack'
-                        nrpn_number: 23
+                        nrpn: 23
                     VSlideController:
                         name: 'Decay'
-                        nrpn_number: 24
+                        nrpn: 24
                     VSlideController:
                         name: 'Sustain'
-                        nrpn_number: 25
+                        nrpn: 25
                     VSlideController:
                         name: 'Release' 
-                        nrpn_number: 26
+                        nrpn: 26
                 HSlideController:
                     #orientation: 'horizontal'
                     size_hint_y: 0.3
                     #pos_hint: {'x': 0.25} 
                     name: 'Envelope Amount' 
-                    nrpn_number: 20
+                    nrpn: 20
                     minimum: -127
                     maximum: 127
                     offset: 127
@@ -402,33 +401,33 @@
                     text: 'VCA'
                 TouchController:
                     name: 'Initial'
-                    nrpn_number: 27
+                    nrpn: 27
                 TouchController:
                     name: 'Envelope'
-                    nrpn_number: 30        
+                    nrpn: 30        
                 TouchController:
                     name: 'Velocity'
-                    nrpn_number: 31
+                    nrpn: 31
                 TouchController:
                     name: 'Volume'
-                    nrpn_number: 29
+                    nrpn: 29
             BoxLayout:
                 orientation: 'horizontal'
                 VSlideController:
                     name: 'Delay'
-                    nrpn_number: 32
+                    nrpn: 32
                 VSlideController:
                     name: 'Attack'
-                    nrpn_number: 33
+                    nrpn: 33
                 VSlideController:
                     name: 'Decay'
-                    nrpn_number: 34
+                    nrpn: 34
                 VSlideController:
                     name: 'Sustain'
-                    nrpn_number: 35
+                    nrpn: 35
                 VSlideController:
                     name: 'Release'
-                    nrpn_number: 36
+                    nrpn: 36
     BoxLayout:
         # Row 3:
         orientation: 'horizontal'
@@ -447,17 +446,17 @@
                         text: 'Envelope 3'       
                     TouchController:
                         name: 'Velocity'
-                        nrpn_number: 59
+                        nrpn: 59
                     ToggleController:
                         name: 'Repeat'
-                        nrpn_number: 98
+                        nrpn: 98
                 Module:
                     orientation: 'vertical'
                     active: False
                     DropDownController:
                         #size_hint_y: 0.5 
                         name: 'Envelope 3 Destination:'
-                        nrpn_number: 57
+                        nrpn: 57
                         option_list: 'destinations'
                         on_value: self.parent.parent.active = True;
                     BoxLayout:
@@ -465,23 +464,23 @@
                         size_hint_y: 3.5
                         VSlideController:
                             name: 'Delay'
-                            nrpn_number: 60
+                            nrpn: 60
                         VSlideController:
                             name: 'Attack'
-                            nrpn_number: 61
+                            nrpn: 61
                         VSlideController:
                             name: 'Decay'
-                            nrpn_number: 62
+                            nrpn: 62
                         VSlideController:
                             name: 'Sustain'
-                            nrpn_number: 63
+                            nrpn: 63
                         VSlideController:
                             name: 'Release'
-                            nrpn_number: 64
+                            nrpn: 64
                     HSlideController:
                         #size_hint_y: 0.5
                         name: 'Envelope Amount' 
-                        nrpn_number: 58
+                        nrpn: 58
                         minimum: -127
                         maximum: 127
                         offset: 127
@@ -498,72 +497,72 @@
                     DropDownController:
                         size_hint_y: 0.5 
                         name: 'Mod 1 Source:'
-                        nrpn_number: 65
+                        nrpn: 65
                         option_list: 'sources'
                     HSlideController:
                         name: 'Amount'
-                        nrpn_number: 66 
+                        nrpn: 66 
                         minimum: -127
                         maximum: 127
                         offset: 127
                     DropDownController:
                         size_hint_y: 0.5 
                         name: 'Destination:'
-                        nrpn_number: 67
+                        nrpn: 67
                         option_list: 'destinations'
                 Module: # ----------Mod 2:----------#
                     orientation: 'vertical'
                     DropDownController:
                         size_hint_y: 0.5 
                         name: 'Mod 2 Source:'
-                        nrpn_number: 68
+                        nrpn: 68
                         option_list: 'sources'
                     HSlideController:
                         name: 'Amount'
-                        nrpn_number: 69 
+                        nrpn: 69 
                         minimum: -127
                         maximum: 127
                         offset: 127
                     DropDownController:
                         size_hint_y: 0.5 
                         name: 'Destination:'
-                        nrpn_number: 70
+                        nrpn: 70
                         option_list: 'destinations'
                 Module: # ----------Mod 3:----------#
                     orientation: 'vertical'
                     DropDownController:
                         size_hint_y: 0.5 
                         name: 'Mod 3 Source:'
-                        nrpn_number: 71
+                        nrpn: 71
                         option_list: 'sources'
                     HSlideController:
                         name: 'Amount'
-                        nrpn_number: 72
+                        nrpn: 72
                         minimum: -127
                         maximum: 127
                         offset: 127
                     DropDownController:
                         size_hint_y: 0.5 
                         name: 'Destination:'
-                        nrpn_number: 73
+                        nrpn: 73
                         option_list: 'destinations'
                 Module: # ----------Mod 4:----------#
                     orientation: 'vertical'
                     DropDownController:
                         size_hint_y: 0.5 
                         name: 'Mod 4 Source:'
-                        nrpn_number: 74
+                        nrpn: 74
                         option_list: 'sources'
                     HSlideController:
                         name: 'Amount'
-                        nrpn_number: 75
+                        nrpn: 75
                         minimum: -127
                         maximum: 127
                         offset: 127
                     DropDownController:
                         size_hint_y: 0.5 
                         name: 'Destination:'
-                        nrpn_number: 76
+                        nrpn: 76
                         option_list: 'destinations'
                 Module: # ----------Mod Wheel:----------#
                     orientation: 'vertical'
@@ -572,14 +571,14 @@
                         text: 'Mod Wheel:'
                     HSlideController:
                         name: 'Amount'
-                        nrpn_number: 81
+                        nrpn: 81
                         minimum: -127
                         maximum: 127
                         offset: 127
                     DropDownController:
                         size_hint_y: 0.5 
                         name: 'Destination:'
-                        nrpn_number: 82
+                        nrpn: 82
                         option_list: 'destinations'
         # Col 2
         GridLayout: #---------------LFOs---------------------#
@@ -591,7 +590,7 @@
                 DropDownController:
                     size_hint_y: 0.3 
                     name: 'LFO 1 Destination:'
-                    nrpn_number: 40
+                    nrpn: 40
                     option_list: 'destinations'
                     on_value: self.parent.active = True
                 BoxLayout:
@@ -601,34 +600,34 @@
                         HSlideController:
                             #size_hint_y: 
                             name: 'Freq' 
-                            nrpn_number: 37
+                            nrpn: 37
                             maximum: 150
                         DropDownController:
                             #size_hint_y: 
                             name: 'Time sync:'
                             is_sub_controller: True
-                            nrpn_number: 37
+                            nrpn: 37
                             offset: 151
                             option_list: 'time_syncs'
                         DropDownController:
                             #size_hint_y: 
                             name: 'Shape:'
-                            nrpn_number: 38
+                            nrpn: 38
                             option_list: 'lfo_shapes'
                         ToggleController:
                             name: 'Key Sync'
-                            nrpn_number: 41
+                            nrpn: 41
                             size_hint_y: 0.5                                
                     VSlideController:
                         name: 'Amount'
-                        nrpn_number: 39
+                        nrpn: 39
             # LFO 2: 45, 42, 42, 43, 46, 44
             Module:
                 orientation: 'vertical'
                 DropDownController:
                     size_hint_y: 0.3 
                     name: 'LFO 2 Destination:'
-                    nrpn_number: 45
+                    nrpn: 45
                     option_list: 'destinations'
                     on_value: self.parent.active = True
                 BoxLayout:
@@ -638,34 +637,34 @@
                         HSlideController:
                             #size_hint_y: 
                             name: 'Freq' 
-                            nrpn_number: 42
+                            nrpn: 42
                             maximum: 150
                         DropDownController:
                             #size_hint_y: 
                             name: 'Time sync:'
                             is_sub_controller: True
-                            nrpn_number: 42
+                            nrpn: 42
                             offset: 151
                             option_list: 'time_syncs'
                         DropDownController:
                             #size_hint_y: 
                             name: 'Shape:'
-                            nrpn_number: 43
+                            nrpn: 43
                             option_list: 'lfo_shapes'
                         ToggleController:
                             name: 'Key Sync'
-                            nrpn_number: 46
+                            nrpn: 46
                             size_hint_y: 0.5                                                              
                     VSlideController:
                         name: 'Amount'
-                        nrpn_number: 44
+                        nrpn: 44
             # LFO 3: 50, 47, 47, 48, 51, 49
             Module:
                 orientation: 'vertical'
                 DropDownController:
                     size_hint_y: 0.3
                     name: 'LFO 3 Destination:'
-                    nrpn_number: 50
+                    nrpn: 50
                     option_list: 'destinations'
                     on_value: self.parent.active = True
                 BoxLayout:
@@ -675,34 +674,34 @@
                         HSlideController:
                             #size_hint_y: 
                             name: 'Freq' 
-                            nrpn_number: 47
+                            nrpn: 47
                             maximum: 150
                         DropDownController:
                             #size_hint_y: 
                             name: 'Time sync:'
                             is_sub_controller: True
-                            nrpn_number: 47
+                            nrpn: 47
                             offset: 151
                             option_list: 'time_syncs'
                         DropDownController:
                             #size_hint_y: 
                             name: 'Shape:'
-                            nrpn_number: 48
+                            nrpn: 48
                             option_list: 'lfo_shapes'
                         ToggleController:
                             name: 'Key Sync'
-                            nrpn_number: 51
+                            nrpn: 51
                             size_hint_y: 0.5                                                                                                   
                     VSlideController:
                         name: 'Amount'
-                        nrpn_number: 49
+                        nrpn: 49
             # LFO 4: 55, 52, 52, 53, 56, 54
             Module:
                 orientation: 'vertical'
                 DropDownController:
                     size_hint_y: 0.3
                     name: 'LFO 4 Destination:'
-                    nrpn_number: 55
+                    nrpn: 55
                     option_list: 'destinations'
                     on_value: self.parent.active = True
                 BoxLayout:
@@ -712,24 +711,24 @@
                         HSlideController:
                             #size_hint_y: 
                             name: 'Freq' 
-                            nrpn_number: 52
+                            nrpn: 52
                             maximum: 150
                         DropDownController:
                             #size_hint_y: 
                             name: 'Time sync:'
                             is_sub_controller: True
-                            nrpn_number: 52
+                            nrpn: 52
                             offset: 151
                             option_list: 'time_syncs'
                         DropDownController:
                             #size_hint_y: 
                             name: 'Shape:'
-                            nrpn_number: 53
+                            nrpn: 53
                             option_list: 'lfo_shapes'
                         ToggleController:
                             name: 'Key Sync'
-                            nrpn_number: 56
+                            nrpn: 56
                             size_hint_y: 0.5                                    
                     VSlideController:
                         name: 'Amount'
-                        nrpn_number: 54     
+                        nrpn: 54     

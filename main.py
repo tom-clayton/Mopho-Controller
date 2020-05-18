@@ -22,8 +22,12 @@
 #  
 #
   
-import midi_interface
-
+from kivy.config import Config
+Config.set('graphics', 'position', 'custom')
+Config.set('graphics', 'left', 400)
+Config.set('graphics', 'top',  100)
+Config.set('graphics', 'width',  1200)
+Config.set('graphics', 'height',  800)
 from kivy.app import App
 from kivy.properties import NumericProperty, StringProperty,\
                             BooleanProperty, ObjectProperty,\
@@ -40,12 +44,23 @@ from kivy.uix.popup import Popup
 from kivy.uix.behaviors import ToggleButtonBehavior
 from kivy.clock import Clock
 #from kivy.factory import Factory
+#from kivy.core.window import Window
+
+
+
 from kivy.lang import Builder
 
-Builder.load_file('Mopho.kv')
+#Window.size = (1200, 800)
+
+import midi_interface
+
+import Mopho # Eventually make this import programatically depending on 
+             # the synth or synths being controlled.
+
+Builder.load_file('Mopho.kv') # And this kivy file load
 
 notes = ('C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B')
-
+"""
 # Unique to mopho: ( could these somehow go in kv file?)
 options = {'glide': ('Fixed rate', 'Fixed rate auto', 'Fixed time', 
                      'Fixed time auto'),
@@ -91,36 +106,37 @@ nrpn_numbers = (0, 1, 2, 3, 4, 114, 5, 6, 7, 8, 9, 115, 10, 11, 12, 93, 96, 13,
                 60, 61, 62, 63, 64, 98, 65, 66, 67, 68, 69, 70, 71, 72, 73,
                 74, 75, 76, 81, 82)
 
-
+"""
 class MainScreen(BoxLayout):
     """The main screen."""
-    pass
+    def request_current_program(self):
+        midi.request_current_program()
     
 
 class BaseController(BoxLayout):
     """Controller base class
-    
+       
        A controller controls a parameter of the synth.
-       A controller always has a name, nrpn number and a value.
-       The nrpn is how it is referenced by the synth.
-       How it's value is displayed and edited depends on its sub-class,
-       i.e. slider
-       
-       It's value may be bounded by a minimum and a maximum.
-       
-       Offset is used if the value does not corespond to the midi value 
-       to be sent. i.e. a contoller that can have a negative value.
        
        If multiple controllers control the same parameter, one will be 
        the main controller and the rest will be sub-controllers, only 
        the main controller will send midi, a sub-controller must do it 
        through the main controller.
        
+       The nrpn is how it is referenced by the synth.
+       How it's value is displayed depends on its sub-class, i.e. slider.
+       
+       It's value is bounded by a minimum and a maximum.
+       
+       Offset is for when the value does not corespond to the value 
+       to be sent. i.e. a controller that can have a negative value.
+       
+       Controller objects are created by the kv file.
        """ 
     
-    # Default controller properties. Set by kv file if different:
+    # Default controller properties. Set by kv file if required:
     name = StringProperty("")
-    nrpn_number = NumericProperty(0)
+    nrpn = NumericProperty(0)
     value = NumericProperty(0)
     minimum = NumericProperty(0)
     maximum = NumericProperty(127)
@@ -154,17 +170,15 @@ class BaseController(BoxLayout):
         # only changes by one, allowing the use of more efficient midi
         # messaging available in some synths.
         self.prev_value = self.value
-
-    # Needed??:    
-    # def loaded(self, value):
-        # """Controller's value is set as loaded from file."""
-        # self.value = value
-        # if VERBOSE:
-            # print ("loaded", self) 
     
-    def set_value(self, value): # is this Even Needed?
+    def get_value(self):
+        """Returns the Controllers value as it should by sent over midi.
+           """
+        return self.value + self.offset
+    
+    def set_value(self, value): 
         """Sets Controller's value."""
-        self.value = value     
+        self.value = value - self.offset    
 
     def display_selected(self):
         """Highlight selected value for appropriate controller types."""    
@@ -176,9 +190,9 @@ class BaseController(BoxLayout):
         return notes[value%12] + str(value/12)
     
     def __repr__(self):
-        return "<{}>:{} {}".format(self.nrpn_number, self.name, self.value)
+        return "<{}>:{} {}".format(self.nrpn, self.name, self.value)
 
-
+# Sub-classes for controller objects created in kv file:
 class SlideController(BaseController):
     """A slider type controller.
     
@@ -254,15 +268,14 @@ class DropDownController(BaseController):
     def setup(self, value):
         """Creates the drop down list for the controller."""
         self.dropdown = DropDown()
-        self.options = options[self.option_list]
+        self.options = synth.options[self.option_list]
         self.button = [widget for widget in self.children 
-                       if isinstance(widget, Button)
-                       ][0]
+                       if isinstance(widget, Button)][0]
         for option in self.options:
             btn = Button(text=option, size_hint_y=None, height=30)
             btn.bind(on_release=lambda btn: self.dropdown.select(btn.text))
             self.dropdown.add_widget(btn)
-        self.button.bind(on_noterelease=self.dropdown.open)
+        self.button.bind(on_release=self.dropdown.open)
         self.dropdown.bind(on_select=self.select_option)
         self.display_selected()
 
@@ -279,7 +292,7 @@ class DropDownController(BaseController):
             self.button.state = 'down'
     
 
-class Mopho(App):
+class MainApp(App):
     """The main application"""
     
     def on_start(self):
@@ -295,10 +308,10 @@ class Mopho(App):
                 controller.setup(0)
         
         self.main_controllers = []
-        for nrpn in nrpn_numbers:
+        for nrpn in synth.nrpn_numbers:
             self.main_controllers.append([c for c in raw_controllers if
                                     not c.is_sub_controller
-                                    and c.nrpn_number == nrpn][0])
+                                    and c.nrpn == nrpn][0])
         
         midi.register_controllers(self.main_controllers)
                                     
@@ -309,18 +322,20 @@ class Mopho(App):
 
 
 def main():
-	global midi
-	midi = midi_interface.Midi()
-	
+    global midi, synth
+    synth = Mopho.Mopho() # see note by import
+    midi = midi_interface.Midi(synth)
+    
 	# raw_controllers is only global so classes created by kv file can
 	# register themselves. mopho.controllers should be used to access
 	# them. (Maybe they can be registered by looking them up using the 
-	# kivy api in mopho.on_start() instead?)
-	global raw_controllers 
-	raw_controllers = [] 
-	clock = Clock.schedule_interval(midi.check_midi, 0.01)
-	mopho = Mopho()
-	mopho.run()
+    # kivy api in mopho.on_start() instead?)
+    global raw_controllers 
+    raw_controllers = [] 
+    clock = Clock.schedule_interval(midi.check_midi, 0.01)
+    
+    app = MainApp()
+    app.run()
     
     
 if __name__ == '__main__':
