@@ -7,8 +7,7 @@ Requires kivy and alsaseq.
 
 Most of the controls for the mopho are here, not the sequencer yet.
 
-Program data dumps are working.
-Saving / Loading patches not currently working.
+Loading patches not currently working.
 
 The code unique to the mopho synth is now seprate, so the hopefully 
 the program could be made to work for other synths.

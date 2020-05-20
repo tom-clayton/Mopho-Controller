@@ -1,137 +1,11 @@
 
-<LoadDialog>:
-    BoxLayout:
-        size: root.size
-        pos: root.pos
-        orientation: "vertical"
-        FileChooserListView:
-            id: filechooser
-            path: '/home/tom/Synths/Mopho'
-        BoxLayout:
-            size_hint_y: None
-            height: 30
-            Button:
-                text: "Cancel"
-                on_release: root.cancel()
-            Button:
-                text: "Load"
-                on_release: root.load(filechooser.path, filechooser.selection)
-<SaveDialog>:
-    text_input: text_input
-    BoxLayout:
-        size: root.size
-        pos: root.pos
-        orientation: "vertical"
-        FileChooserListView:
-            id: filechooser
-            path: '/home/tom/Synths/Mopho'
-            on_selection: text_input.text = self.selection and self.selection[0] or ''
-        TextInput:
-            id: text_input
-            size_hint_y: None
-            height: 30
-            multiline: False
-
-        BoxLayout:
-            size_hint_y: None
-            height: 30
-            Button:
-                text: "Cancel"
-                on_release: root.cancel()
-            Button:
-                text: "Save"
-                on_release: root.save(filechooser.path, text_input.text)
-
-<ConfirmDialog>:
-    BoxLayout:
-        size: root.size
-        pos: root.pos
-        orientation: "vertical"
-        Label:
-            text: root.message
-        BoxLayout:
-            size_hint_y: None
-            height: 30
-            Button:
-                text: "Cancel"
-                on_release: root.cancel()
-            Button:
-                text: "Confirm"
-                on_release: root.confirm(root.data)
-
-<HSlideController@SlideController>
-    orientation: 'vertical'
-    Label:
-        #size_hint_x: 0.1
-        text: root.name
-    Slider:
-        orientation: 'horizontal'
-        min: root.minimum
-        max: root.maximum
-        step: 1
-        value: root.value 
-        on_value: root.value = int(self.value)
-    Label:
-        #size_hint_x: 0.1
-        text: str(root.value)   
-
-<VSlideController@SlideController>
-    orientation: 'vertical'
-    Label:
-        size_hint_y: 0.1
-        text: root.name
-    Slider:
-        orientation: 'vertical'
-        min: root.minimum
-        max: root.maximum
-        step: 1
-        value: root.value 
-        on_value: root.value = int(self.value)
-    Label:
-        size_hint_y: 0.1
-        text: str(root.value)
-
-<TouchController>           
-    orientation: 'vertical'
-    on_value: self.display_function(self.value)
-    Label:
-        text: root.name
-        text_size: self.size
-        halign: 'center'
-        valign: 'bottom'
-    Label:
-        text: root.display_function(root.value)
-        text_size: self.size
-        halign: 'center'
-        valign: 'top'
-
-<SwitchController>
-    orientation: 'horizontal'
-
-<DropDownController>
-    orientation: 'vertical'
-    Label: 
-        text: root.name
-    Button:
-        text: 'Off'
-
-<ToggleController>
-    ToggleButton:
-        text: root.name 
-        on_state: root.value = 1 if self.state == 'down' else 0
-        values: [1]
-    
-<MultiToggle@ToggleButton> 
-    group: self.parent.name
-    allow_no_selection: False
-    multivalue: False
-    on_press: self.parent.value = self.values[0]
-
 <Module@BoxLayout>
     padding: 5
     active: False
+    
+# Move mainscreen to a mainscreen kv file, this is for mopho only stuff
 
-
+# maybe dont have sub contoller, just don't have nrpn number
     
 <MainScreen>:    
     orientation: 'vertical'
@@ -143,11 +17,11 @@
         Button:
             size_hint_x: 0.2
             text: 'Load'
-            on_press: root.show_load_popup()
+            on_press: root.load_program()
         Button:
             size_hint_x: 0.2
             text: 'Save'
-            on_press: root.show_save_popup()
+            on_press: root.save_program()
         Button:
             size_hint_x: 0.2
             text: 'Recieve'
@@ -207,7 +81,7 @@
                         #value: self.value.set_min(-50)
                         minimum: -50
                         maximum: 50
-                        offset: 50
+                        offset: -50
                     ToggleController:
                         name: 'Keyboard'
                         nrpn: 4
@@ -272,7 +146,7 @@
                         nrpn: 6
                         minimum: -50
                         maximum: 50
-                        offset: 50
+                        offset: -50
                     ToggleController:
                         name: 'Keyboard'
                         nrpn: 9
@@ -392,7 +266,7 @@
                     nrpn: 20
                     minimum: -127
                     maximum: 127
-                    offset: 127
+                    offset: -127
         Module: #---------------VCA-----------------#
             BoxLayout:
                 size_hint_x: 0.2
@@ -483,7 +357,7 @@
                         nrpn: 58
                         minimum: -127
                         maximum: 127
-                        offset: 127
+                        offset: -127
                     
             # Col 1 still:
             BoxLayout:
@@ -504,7 +378,7 @@
                         nrpn: 66 
                         minimum: -127
                         maximum: 127
-                        offset: 127
+                        offset: -127
                     DropDownController:
                         size_hint_y: 0.5 
                         name: 'Destination:'
@@ -522,7 +396,7 @@
                         nrpn: 69 
                         minimum: -127
                         maximum: 127
-                        offset: 127
+                        offset: -127
                     DropDownController:
                         size_hint_y: 0.5 
                         name: 'Destination:'
@@ -540,7 +414,7 @@
                         nrpn: 72
                         minimum: -127
                         maximum: 127
-                        offset: 127
+                        offset: -127
                     DropDownController:
                         size_hint_y: 0.5 
                         name: 'Destination:'
@@ -558,7 +432,7 @@
                         nrpn: 75
                         minimum: -127
                         maximum: 127
-                        offset: 127
+                        offset: -127
                     DropDownController:
                         size_hint_y: 0.5 
                         name: 'Destination:'
@@ -574,7 +448,7 @@
                         nrpn: 81
                         minimum: -127
                         maximum: 127
-                        offset: 127
+                        offset: -127
                     DropDownController:
                         size_hint_y: 0.5 
                         name: 'Destination:'
@@ -607,7 +481,7 @@
                             name: 'Time sync:'
                             is_sub_controller: True
                             nrpn: 37
-                            offset: 151
+                            offset: -151
                             option_list: 'time_syncs'
                         DropDownController:
                             #size_hint_y: 
@@ -644,7 +518,7 @@
                             name: 'Time sync:'
                             is_sub_controller: True
                             nrpn: 42
-                            offset: 151
+                            offset: -151
                             option_list: 'time_syncs'
                         DropDownController:
                             #size_hint_y: 
@@ -681,7 +555,7 @@
                             name: 'Time sync:'
                             is_sub_controller: True
                             nrpn: 47
-                            offset: 151
+                            offset: -151
                             option_list: 'time_syncs'
                         DropDownController:
                             #size_hint_y: 
@@ -718,7 +592,7 @@
                             name: 'Time sync:'
                             is_sub_controller: True
                             nrpn: 52
-                            offset: 151
+                            offset: -151
                             option_list: 'time_syncs'
                         DropDownController:
                             #size_hint_y: 

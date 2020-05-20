@@ -22,9 +22,7 @@
 #  
 #  
 
-from synth import Synth
-
-class Mopho(Synth):
+class Synth():
     """Class of option data, parameter order and midi methods uniquie 
        to the DSI Mopho synth. Information taken from Mopho operators 
        manual."""
@@ -68,18 +66,39 @@ class Mopho(Synth):
                        'Audio In Envelope Follower', 'Audio In Peak Hold')}
     # It may be possible to store these in the kivy file and use a kivy
     # option property.
-                       
-                       
-                       
-    # The nrpn numbers of all controllers we want to control, in order
-    # they come in a program dump from the synth go here:                   
-    nrpn_numbers = (0, 1, 2, 3, 4, 114, 5, 6, 7, 8, 9, 115, 10, 11, 12, 93, 96, 13,
-                14, 116, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 
-                30, 31, 32, 33, 34, 35, 36, 29, 37, 38, 39, 40, 41, 42, 43, 44,
-                45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59,
-                60, 61, 62, 63, 64, 98, 65, 66, 67, 68, 69, 70, 71, 72, 73,
-                74, 75, 76, 81, 82)
     
+    
+    # The total number of parameters in the synth goes here:
+    number_of_parameters = 256
+                       
+    # If the paramters are not numberered in the order they come in a 
+    # program dump, the order of nrpns must go here:
+    # If all parameters come in nrpn order this tuple should be left out.                   
+    # Only use for used parmeter slot, not parameters not controlled.
+    nrpn_order = tuple ([0, 1, 2, 3, 4, 114, 5, 6, 7, 8, 9, 115, 10, 11, 12, 
+                    93, 96, 13, 14, 116, 15, 16, 17, 18, 19, 20, 21, 22, 
+                    23, 24, 25, 26, 27, 30, 31, 32, 33, 34, 35, 36, 29, 
+                    37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 
+                    50, 51, 52, 53, 54, 55, 56, 57, 58, 59,60, 61, 62, 
+                    63, 64, 98, 65, 66, 67, 68, 69, 70, 71, 72, 73,74, 
+                    75, 76, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 111, 
+                    112, 113, 91, 92, 97, 100, 94, 101, 77, 78, 79, 80,
+                    105, 106, 107, 108] + \
+                    [None for x in range(11)] + \
+                    list(range(120, 200)) + \
+                    [None for x in range(56)])
+    
+                
+    # All parameters before a parameter being used must be included.
+    # If they are not known just put in the position. This is to make
+    # sure the remaining parameter's positions are correct.
+    
+    # If after a certain point, the nrpns of all remaining parameters 
+    # are equal to the paramter's position in a program dump, the rest 
+    # can be left out.
+    
+    # Note: This will be changed to a (position, nrpn) tuple to save 
+    # confusion.
     
     # The number of midi_messages that a control change comes from the 
     # synth in goes here:
@@ -117,7 +136,7 @@ class Mopho(Synth):
 
     def is_program_dump(self, midi_data):
         """Asserts whether sysex data received from synth (with sysex
-           delimiters stripped is a program dump. Returns True or False.
+           delimiters stripped) is a program dump. Returns True or False.
            """
              
         if midi_data[2] == 0x02 or midi_data[2] == 0x03:

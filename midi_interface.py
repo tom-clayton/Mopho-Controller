@@ -27,11 +27,9 @@ import alsaseq
 # alsaseq midi message tuple definition:
 # (type, flags, tag, queue, time stamp, source, destination, data)
 
-DEBUG_OUTPUT = True
-
 class Midi():
     
-    def __init__(self, synth):
+    def __init__(self, synth, controllers):
         """Sets up midi interface"""
         alsaseq.client('Synth Control', 1, 1, False)
         
@@ -40,48 +38,35 @@ class Midi():
         alsaseq.connectto(1, 28, 0)
         
         self.synth = synth
-        self.midi_out_paused = False
-        
-
-    def register_controllers(self, controllers):
-        """Registers list of top level controllers, in order they come
-           from synth in a program data dump"""
         self.controllers = controllers
+        self.pause_midi_out = False
 
+    
     # ----------------------------------------------------- #
     #                   MIDI OUT METHODS                    #
     # ----------------------------------------------------- #
     
-    def send_cc(self, controller):
+    def send_cc(self, nrpn, value):
         """Sends out midi data for controller unless controller change
            was due to incoming midi."""
 
         # Midi out will be paused if message was due to incoming midi:
-        if self.midi_out_paused:
-            self.midi_out_paused = False
+        if self.pause_midi_out:
             return
-        
+
         # here we could check if controller has only changed by one to 
         # make use of more efficient midi messaging available in some 
         # synths.
-        
-        value = controller.get_value()
         
         # Send out the midi message(s).
         # synth class will encode the midi messages, it will return a 
         # tuple of a 2 byte bytes objects for each message. One byte for
         # each cc data byte.
-        for message in self.synth.encode_cc(controller.nrpn, value):
+
+        for message in self.synth.encode_cc(nrpn, value):
+            print(message)
             alsaseq.output((10, 1, 0, 253, (0, 0), (0, 0), (0,0), 
                             (0, 0, 0, 0, message[0], message[1]))) 
-        
-        if DEBUG_OUTPUT:
-            print("sent", controller)
-
-    def send_program(self):
-        """Sends value for every main controller."""
-        for controller in self.controllers:
-            self.send_cc(controller)
     
     def request_current_program(self): 
         """Sends request for the current program data"""
@@ -124,21 +109,9 @@ class Midi():
                 data += bytes([event[-1][-1]])
         nrpn, value = self.synth.decode_cc(data)
         
-        try:
-            # Look up controller:
-            controller = self.controller_from_nrpn(nrpn)
-        
-            # Pause midi out, so received message isn't sent back out 
-            # when controller value is updated:
-            self.midi_out_paused = True
-            controller.set_value(value)
-        
-            if DEBUG_OUTPUT:
-                print("received", controller)
-                
-        except IndexError:
-            pass
-
+        self.pause_midi_out = True
+        self.controllers.set_controller_value(nrpn, value)
+        self.pause_midi_out = False
 
     def receive_sysex(self, event):
         """Recieves system exclusive midi event.
@@ -153,6 +126,7 @@ class Midi():
             print("Unidentified sysex message.")
             return
         
+        print("Incoming program dump")
        
         # Strip data from messages and combine:
         data = event[-1][1:-1]
@@ -163,37 +137,14 @@ class Midi():
         while n_chunks < total_chunks:
             event = alsaseq.input()
             if event[0] == alsaseq.SND_SEQ_EVENT_SYSEX:
-                data += event[-1]
+                data += event[-1] # does this need stripping too?
                 n_chunks += 1
         
-        # Unpack program into list of integers:
         unpacked_data = self.synth.unpack_program_data(data)
         
-        # Set controllers in correct order:
-        for index, nrpn in enumerate(self.synth.nrpn_numbers):
-            value = unpacked_data[index]
-            try:
-                controller = self.controller_from_nrpn(nrpn)
-            except IndexError:
-                pass
-                
-            self.midi_out_paused = True
-            controller.set_value(value) 
- 
-    def controller_from_nrpn(self, nrpn):
-        controllers_found =  [c for c in self.controllers \
-                                    if c.nrpn == nrpn]
-                                
-        if len(controllers_found) == 0:
-            print ("No controller found for nrpn ", nrpn)
-        elif len(controllers_found) > 1:
-            print ("Warning: Multiple top level controllers found for nrpn",
-                    nrpn)
-            print ("Using: ", controllers_found[0])
-            for controller in controllers_found[1:]:
-                print("Ignoring: ", controller)
-        
-        return controllers_found[0]  
+        self.pause_midi_out = True
+        self.controllers.set_all_values(unpacked_data)
+        self.pause_midi_out = False
 
 def main(args):
     return 0

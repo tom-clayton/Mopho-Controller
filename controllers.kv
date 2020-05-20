@@ -1,0 +1,68 @@
+
+<HSlideController@SlideController>
+    orientation: 'vertical'
+    Label:
+        #size_hint_x: 0.1
+        text: root.name
+    Slider:
+        orientation: 'horizontal'
+        min: root.minimum
+        max: root.maximum
+        step: 1
+        value: root.value 
+        on_value: root.value = int(self.value)
+    Label:
+        #size_hint_x: 0.1
+        text: str(root.value)   
+
+<VSlideController@SlideController>
+    orientation: 'vertical'
+    Label:
+        size_hint_y: 0.1
+        text: root.name
+    Slider:
+        orientation: 'vertical'
+        min: root.minimum
+        max: root.maximum
+        step: 1
+        value: root.value 
+        on_value: root.value = int(self.value)
+    Label:
+        size_hint_y: 0.1
+        text: str(root.value)
+
+<TouchController>           
+    orientation: 'vertical'
+    on_value: self.display_function(self.value)
+    Label:
+        text: root.name
+        text_size: self.size
+        halign: 'center'
+        valign: 'bottom'
+    Label:
+        text: root.display_function(root.value)
+        text_size: self.size
+        halign: 'center'
+        valign: 'top'
+
+<SwitchController>
+    orientation: 'horizontal'
+
+<DropDownController>
+    orientation: 'vertical'
+    Label: 
+        text: root.name
+    Button:
+        text: 'Off'
+
+<ToggleController>
+    ToggleButton:
+        text: root.name 
+        on_state: root.value = 1 if self.state == 'down' else 0
+        values: [1]
+    
+<MultiToggle@ToggleButton> 
+    group: self.parent.name
+    allow_no_selection: False
+    multivalue: False
+    on_press: self.parent.value = self.values[0]
