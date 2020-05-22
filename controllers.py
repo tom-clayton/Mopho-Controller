@@ -132,6 +132,11 @@ class ControllerManager():
 
         return controllers_found[0] 
 
+    def print_all_controllers(self):
+        """Prints the value of every controller to stdout."""
+        for controller in self.controllers:
+            print (controller)
+
 class BaseController(BoxLayout):
     """Controller base class
        
@@ -182,7 +187,15 @@ class BaseController(BoxLayout):
         # Only send midi if it is a main_controller:
         if self.is_sub_controller:
             return
-            
+        
+        """
+        try:
+            self.send_cc()
+            # change sub-controllers
+        except AttributeError:
+            # change parent controller
+        """
+        
         self.send_cc()
 
         # Remember the prev value to check if value
