@@ -45,9 +45,6 @@
         halign: 'center'
         valign: 'top'
 
-<SwitchController>
-    orientation: 'horizontal'
-
 <DropDownController>
     orientation: 'vertical'
     Label: 
@@ -55,14 +52,15 @@
     Button:
         text: 'Off'
 
-<ToggleController>
-    ToggleButton:
-        text: root.name 
-        on_state: root.value = 1 if self.state == 'down' else 0
-        values: [1]
-    
-<MultiToggle@ToggleButton> 
+<RadioButton>
     group: self.parent.name
     allow_no_selection: False
-    multivalue: False
-    on_press: self.parent.value = self.values[0]
+    all_other_values: False
+    on_press: self.on_press()
+
+<ToggleController>
+    ToggleButton:
+        text: root.name
+        on_press: root.value = 1 if self.state == 'down' else 0
+   
+

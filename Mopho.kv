@@ -1,12 +1,24 @@
 
+
+# Offset notes:
+# Offset: Add offset to go from midi value to actual param value.
+# Subcontroller offset: Add offset to go from main controller value 
+# to actual sub-controller param value or option index.
+
+
+
 <Module@BoxLayout>
     padding: 5
     active: False
-    
-# Move mainscreen to a mainscreen kv file, this is for mopho only stuff
 
-# maybe dont have sub contoller, just don't have nrpn number
+
+# this is a test to see if having option lists here instead of in synth 
+# py file is possible.
+<sources>
+    value: [1, 2, 3]
     
+# Move mainscreen to a mainscreen kv file, this file should be 
+# for mopho only stuff.
 <MainScreen>:    
     orientation: 'vertical'
     BoxLayout:
@@ -31,54 +43,45 @@
         orientation: 'horizontal'
         size_hint_y: 1.2
         Module: # ---------------- Osc 1 --------------------#
-            orientation: 'horizontal'
             BoxLayout:    
                 orientation: 'vertical'
                 BoxLayout:
                     padding: 3
-                    SwitchController:
-                        id: shape1
-                        orientation: 'horizontal'
+                    DualController:
                         name: 'Osc 1 Shape'
                         nrpn: 2
-                        #on_value: width1.value = 0 if self.value < 4 else self.value - 4
-                        MultiToggle:
-                            text: 'Off'
-                            values: [0]
-                            state: 'down'
-                        MultiToggle:
-                            text: 'Saw'
-                            values: [1]
-                        MultiToggle:
-                            text: 'Tri'
-                            values: [2]
-                        MultiToggle:
-                            text: 'Saw/Tri'
-                            values: [3]
-                        MultiToggle:
-                            text: 'Pulse'
-                            multivalue: True
-                            values: range(4,104)
-                    TouchController:
-                        size_hint_x: 0.2
-                        name: 'Pulse Width'
-                        id: width1
-                        nrpn: 2
-                        is_sub_controller: True
-                        maximum: 99 
-                        on_value: shape1.value = self.value + 4  
+                        RadioController:
+                            name: 'Osc 1 radio'
+                            RadioButton:
+                                text: 'Off'
+                                value: 0
+                            RadioButton:
+                                text: 'Saw'
+                                value: 1
+                            RadioButton:
+                                text: 'Tri'
+                                value: 2
+                            RadioButton:
+                                text: 'Saw/Tri'
+                                value: 3
+                            RadioButton:
+                                text: 'Pulse'
+                                all_other_values: True
+                        TouchController:
+                            size_hint_x: 0.2
+                            name: 'Width'
+                            offset: -4 
                 BoxLayout:
-                    orientation: 'horizontal'
                     TouchController:
                         name: 'Osc 1: Freq'
                         nrpn: 0
                         maximum: 120
-                        display_function: self.note
+                        # add a midi notes flag rather than link to func???
+                        display_function: self.note 
                     HSlideController:
                         size_hint_x: 2
                         name: 'Osc 1 Fine'
                         nrpn: 1
-                        #value: self.value.set_min(-50)
                         minimum: -50
                         maximum: 50
                         offset: -50
@@ -91,50 +94,37 @@
             VSlideController:
                 size_hint_x: 0.1
                 name: 'Sub Osc'
-                param_number: 5 # Remove?????????????
                 nrpn: 114 
             
         Module: # ---------------- Osc 2 --------------------#
-            orientation: 'horizontal'
             BoxLayout:
-                
                 orientation: 'vertical'
-                BoxLayout:
-                    padding: 3
-                    SwitchController:
-                        orientation: 'horizontal'
-                        name: 'Osc 2 Shape'
-                        id: shape2 
-                        nrpn: 7
-                        #on_value: width2.value = 0 if self.value < 4 else self.value - 4
-                        MultiToggle:
+                DualController:
+                    name: 'Osc 2 Shape'
+                    nrpn: 7
+                    RadioController:
+                        name: 'Osc 2 radio'
+                        RadioButton:
                             text: 'Off'
-                            values: [0]
-                            state: 'down'
-                        MultiToggle:
+                            value: 0
+                        RadioButton:
                             text: 'Saw'
-                            values: [1]
-                        MultiToggle:
+                            value: 1
+                        RadioButton:
                             text: 'Tri'
-                            values: [2]
-                        MultiToggle:
+                            value: 2
+                        RadioButton:
                             text: 'Saw/Tri'
-                            values: [3]
-                        MultiToggle:
+                            value: 3
+                        RadioButton:
                             text: 'Pulse'
-                            multivalue: True
-                            values: range(4,104)
+                            all_other_values: True
                     TouchController:
                         size_hint_x: 0.2
-                        name: 'Pulse Width'
-                        id: width2
-                        nrpn: 7
-                        is_sub_controller: True
-                        maximum: 99  
-                        on_value: shape2.value = self.value + 4 
+                        name: 'Width'
+                        offset: -4
                         
                 BoxLayout:
-                    orientation: 'horizontal'
                     TouchController:
                         name: 'Osc 2: Freq'
                         nrpn: 5
@@ -158,7 +148,6 @@
                 name: 'Sub Osc'
                 nrpn: 115
         Module: #----------------Mixer-------------------#
-            orientation: 'horizontal'
             size_hint_x: 0.8
             BoxLayout:
                 orientation: 'vertical'
@@ -166,7 +155,6 @@
                     name: 'Osc Mix'
                     nrpn: 13
                 BoxLayout:
-                    orientation: 'horizontal'
                     ToggleController:
                         name: 'Sync'
                         nrpn: 10
@@ -179,48 +167,41 @@
                         nrpn: 93
                         maximum: 12
                     TouchController:
-                        #size_hint_x: 0.2
                         name: 'Input'
                         nrpn: 116  
-                #BoxLayout:
-                    #orientation: 'horizontal'
                 DropDownController:
                     name: 'Glide:'
                     nrpn: 11
                     option_list: 'glide'
-                    always_on: True
                 DropDownController:
                     name: 'Key Assign Priority:'
                     nrpn: 96
                     option_list: 'key_assign'
-                    always_on: True
             VSlideController:
                 size_hint_x: 0.2
                 name: 'Noise'
                 nrpn: 14   
     BoxLayout:
         # Row 2
-        orientation: 'horizontal'
         size_hint_y: 1.6
         Module: # ---------------- Filter -------------------#
-            orientation: 'horizontal'
             BoxLayout:
                 size_hint_x: 0.2
                 orientation: 'vertical'
                 Label:
-                    text: 'Filter\n\nPoles:'
-                    size_hint_y: 1.5
-                SwitchController:
+                    size_hint_y: 0.1
+                    text: 'Filter'
+                Label:
+                    text: 'Poles'
+                RadioController:
                     name: 'filter poles'
                     nrpn: 19
-                    value: 0
-                    MultiToggle:
+                    RadioButton:
                         text: '2'
-                        values: [0]
-                        state: 'down'
-                    MultiToggle:
+                        value: 0
+                    RadioButton:
                         text: '4'
-                        values: [1]   
+                        value: 1
                 TouchController:
                     name: 'Keyboard'
                     nrpn: 17
@@ -237,12 +218,11 @@
                 maximum: 164
             VSlideController:
                 size_hint_x: 0.2
-                name: "Resonance"
+                name: 'Resonance'
                 nrpn: 16
             BoxLayout:
                 orientation: 'vertical'
                 BoxLayout:
-                    orientation: 'horizontal'
                     VSlideController:
                         name: 'Delay'
                         nrpn: 22
@@ -259,9 +239,7 @@
                         name: 'Release' 
                         nrpn: 26
                 HSlideController:
-                    #orientation: 'horizontal'
-                    size_hint_y: 0.3
-                    #pos_hint: {'x': 0.25} 
+                    size_hint_y: 0.3 
                     name: 'Envelope Amount' 
                     nrpn: 20
                     minimum: -127
@@ -286,7 +264,6 @@
                     name: 'Volume'
                     nrpn: 29
             BoxLayout:
-                orientation: 'horizontal'
                 VSlideController:
                     name: 'Delay'
                     nrpn: 32
@@ -304,15 +281,13 @@
                     nrpn: 36
     BoxLayout:
         # Row 3:
-        orientation: 'horizontal'
         size_hint_y: 3.5
         BoxLayout:
             # Col 1:
             orientation: 'vertical'
             Module: #--------------- Env 3 -----------------#
-                orientation: 'horizontal'
                 size_hint_y: 0.8
-                active: False
+                active: False #???
                 BoxLayout:
                     size_hint_x: 0.2
                     orientation: 'vertical'
@@ -328,13 +303,11 @@
                     orientation: 'vertical'
                     active: False
                     DropDownController:
-                        #size_hint_y: 0.5 
                         name: 'Envelope 3 Destination:'
                         nrpn: 57
                         option_list: 'destinations'
-                        on_value: self.parent.parent.active = True;
+                        on_value: self.parent.parent.active = True; #???
                     BoxLayout:
-                        orientation: 'horizontal'
                         size_hint_y: 3.5
                         VSlideController:
                             name: 'Delay'
@@ -352,7 +325,6 @@
                             name: 'Release'
                             nrpn: 64
                     HSlideController:
-                        #size_hint_y: 0.5
                         name: 'Envelope Amount' 
                         nrpn: 58
                         minimum: -127
@@ -361,11 +333,7 @@
                     
             # Col 1 still:
             BoxLayout:
-                orientation: 'horizontal'
                 size_hint_y: 0.5
-            #GridLayout: #------------------Mods--------------------#
-                #rows: 2
-                #cols: 2
                 Module: # ----------Mod 1:----------#
                     orientation: 'vertical'
                     DropDownController:
@@ -468,21 +436,24 @@
                     option_list: 'destinations'
                     on_value: self.parent.active = True
                 BoxLayout:
-                    orientation: 'horizontal'
                     BoxLayout:
                         orientation: 'vertical'                            
-                        HSlideController:
-                            #size_hint_y: 
-                            name: 'Freq' 
+                        DualController:
+                            orientation: 'vertical'
                             nrpn: 37
-                            maximum: 150
-                        DropDownController:
-                            #size_hint_y: 
-                            name: 'Time sync:'
-                            is_sub_controller: True
-                            nrpn: 37
-                            offset: -151
-                            option_list: 'time_syncs'
+                            HSlideController:
+                                name: 'Freq' 
+                                # values: range(0, 151)
+                                #nrpn: 37
+                                maximum: 150
+                            DropDownController:
+                                #size_hint_y: 
+                                name: 'Time sync:'
+                                #is_sub_controller: True
+                                #nrpn: 37
+                                offset: -151
+                                values: range(151, 128)
+                                option_list: 'time_syncs'
                         DropDownController:
                             #size_hint_y: 
                             name: 'Shape:'
@@ -505,21 +476,25 @@
                     option_list: 'destinations'
                     on_value: self.parent.active = True
                 BoxLayout:
-                    orientation: 'horizontal'
                     BoxLayout:
                         orientation: 'vertical'                            
-                        HSlideController:
-                            #size_hint_y: 
-                            name: 'Freq' 
+                        DualController:
+                            orientation: 'vertical'
                             nrpn: 42
-                            maximum: 150
-                        DropDownController:
-                            #size_hint_y: 
-                            name: 'Time sync:'
-                            is_sub_controller: True
-                            nrpn: 42
-                            offset: -151
-                            option_list: 'time_syncs'
+                            HSlideController:
+                                #size_hint_y: 
+                                name: 'Freq' 
+                                #values: range(0, 151)
+                                #nrpn: 37
+                                maximum: 150
+                            DropDownController:
+                                #size_hint_y: 
+                                name: 'Time sync:'
+                                #is_sub_controller: True
+                                #nrpn: 37
+                                offset: -151
+                                #values: range(151, 128)
+                                option_list: 'time_syncs'
                         DropDownController:
                             #size_hint_y: 
                             name: 'Shape:'
@@ -542,21 +517,25 @@
                     option_list: 'destinations'
                     on_value: self.parent.active = True
                 BoxLayout:
-                    orientation: 'horizontal'
                     BoxLayout:
                         orientation: 'vertical'                            
-                        HSlideController:
-                            #size_hint_y: 
-                            name: 'Freq' 
+                        DualController:
+                            orientation: 'vertical'
                             nrpn: 47
-                            maximum: 150
-                        DropDownController:
-                            #size_hint_y: 
-                            name: 'Time sync:'
-                            is_sub_controller: True
-                            nrpn: 47
-                            offset: -151
-                            option_list: 'time_syncs'
+                            HSlideController:
+                                #size_hint_y: 
+                                name: 'Freq' 
+                                values: range(0, 151)
+                                #nrpn: 37
+                                maximum: 150
+                            DropDownController:
+                                #size_hint_y: 
+                                name: 'Time sync:'
+                                #is_sub_controller: True
+                                #nrpn: 37
+                                offset: -151
+                                #values: range(151, 128)
+                                option_list: 'time_syncs'
                         DropDownController:
                             #size_hint_y: 
                             name: 'Shape:'
@@ -579,21 +558,25 @@
                     option_list: 'destinations'
                     on_value: self.parent.active = True
                 BoxLayout:
-                    orientation: 'horizontal'
                     BoxLayout:
                         orientation: 'vertical'                            
-                        HSlideController:
-                            #size_hint_y: 
-                            name: 'Freq' 
+                        DualController:
+                            orientation: 'vertical'
                             nrpn: 52
-                            maximum: 150
-                        DropDownController:
-                            #size_hint_y: 
-                            name: 'Time sync:'
-                            is_sub_controller: True
-                            nrpn: 52
-                            offset: -151
-                            option_list: 'time_syncs'
+                            HSlideController:
+                                #size_hint_y: 
+                                name: 'Freq' 
+                                #values: range(0, 151)
+                                #nrpn: 37
+                                maximum: 150
+                            DropDownController:
+                                #size_hint_y: 
+                                name: 'Time sync:'
+                                #is_sub_controller: True
+                                #nrpn: 37
+                                offset: -151
+                                #values: range(151, 128)
+                                option_list: 'time_syncs'
                         DropDownController:
                             #size_hint_y: 
                             name: 'Shape:'

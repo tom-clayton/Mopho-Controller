@@ -64,7 +64,6 @@ class Midi():
         # each cc data byte.
 
         for message in self.synth.encode_cc(nrpn, value):
-            print(message)
             alsaseq.output((10, 1, 0, 253, (0, 0), (0, 0), (0,0), 
                             (0, 0, 0, 0, message[0], message[1]))) 
     
@@ -93,10 +92,7 @@ class Midi():
 
     def receive_cc(self, event):
         """Recieves control change midi event.
-        
            Sets relevent contoller value.
-           Sets last_controller_recevied so received message is not
-           sent back out.
            """ 
         
         # Strip data from messages, combine and send to synth class:

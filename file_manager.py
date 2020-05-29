@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-#  filer.py
+#  file_manager.py
 #  
 #  Copyright 2020 tom <tom@MusicPC>
 #  
@@ -34,8 +34,8 @@ Builder.load_file('file_manager.kv')
 
 class FileManager():
     
-    def __init__(self, controllers):
-        self.controllers = controllers
+    def __init__(self, client):
+        self.client = client
             
     def show_save_popup(self):
         """Displays save pop-up dialogue."""
@@ -79,18 +79,18 @@ class FileManager():
         self.dismiss_save_popup()    
     
     def load_program(self, path, filename):
-        """Loads program from file."""
-        print ("load", os.path.join(path, filename[0]))
-        with open(os.path.join(path, filename[0]), 'rb') as fo:
-            data = [x for x in fo.read()]
-            self.controllers.set_all_values(tuple(data))
+        """Loads binary data from file."""
+        full_filename = os.path.join(path, filename[0])
+        print ("loading ", full_filename)
+        with open(full_filename, 'rb') as fo:
+            self.client.set_load_data(fo.read())
         self.dismiss_load_popup()
             
     def save_program(self, filename):
-        """Saves current program to file."""
-        print ("saving: ", filename)
+        """Saves binary data to file."""
+        print ("saving ", filename)
         with open(filename, 'wb') as fo:
-            fo.write(bytearray(self.controllers.get_all_values()))
+            fo.write(bytearray(self.client.get_save_data()))
         self.dismiss_confirm_popup()
     
     def dismiss_load_popup(self):

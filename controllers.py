@@ -32,7 +32,7 @@ from kivy.uix.label import Label
 from kivy.uix.dropdown import DropDown
 from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.behaviors import ToggleButtonBehavior
-
+from kivy import factory
 from kivy.lang import Builder
 
 Builder.load_file('controllers.kv')
@@ -43,6 +43,7 @@ Builder.load_file('controllers.kv')
 # kivy api in mopho.on_start() instead?)
 # global raw_controllers 
 raw_controllers = [] 
+
 
 class ControllerManager():
     def setup_controllers(self, midi, synth):
@@ -55,13 +56,17 @@ class ControllerManager():
         self.synth = synth
         self.controllers = []
         for controller in raw_controllers:
-            if not controller.is_sub_controller:
+            controller.synth = synth
+            try:
+                controller.setup()
+            except AttributeError:
+                pass
+            if not controller.is_subcontroller:
                 self.controllers.append(controller)
                 controller.midi = midi
-            controller.synth = synth
-            if isinstance(controller, DropDownController):
-                controller.setup(0)
+            
         
+        # Load not working!
         # Could this be setup on init as a list of 
         # kivy properties, so they automatically update for loading
         # and saving, etc ??        
@@ -73,7 +78,6 @@ class ControllerManager():
         else:
             self.nrpn_order = range(self.synth.number_of_parameters)
             
-    
     def set_controller_value(self, nrpn, value):
         """Sets relevant controllers value"""
         try:
@@ -95,15 +99,14 @@ class ControllerManager():
         for i, nrpn in enumerate(self.nrpn_order):
             if nrpn is not None:
                 self.set_controller_value(nrpn, values[i])
-        
-    
+
     def send_program(self):
         """Sends value for every main controller."""
         for controller in self.controllers:
             controller.send_cc()
-    
-    def get_all_values(self):
-        """Returns a tuple of all synth parameter values, including 
+            
+    def get_save_data(self):
+        """Returns a bytearray of all synth parameter values, including 
            ones not controlled by a controller."""
         
         # see note in setup_controllers method 
@@ -115,7 +118,12 @@ class ControllerManager():
             except IndexError:
                 output.append(self.controller_values[i])
         
-        return output
+        return bytearray(output)
+    
+    def set_load_data(self, data):
+        """Receives load data from file manager."""
+        data = [x for x in fo.read()]
+        self.set_all_values(data)
                 
     def controller_from_nrpn(self, nrpn):
         """Returns controller with given nrpn number.
@@ -160,7 +168,7 @@ class BaseController(BoxLayout):
     minimum = NumericProperty(0)
     maximum = NumericProperty(127)
     offset = NumericProperty(0)
-    is_sub_controller = BooleanProperty(False)
+    is_subcontroller = BooleanProperty(False)
     display_function = ObjectProperty(lambda value: str(value))
     
     def __init__(self, **kwargs):
@@ -171,25 +179,28 @@ class BaseController(BoxLayout):
     def on_value(self, *args):
         """Responds to a change in controller value.
         
+           Checks for subcontroller.
            Displays chosen value if approriate for controller.
            Sends out value over midi.
            """
-	
-        if type(self) in (ToggleController, SwitchController,
-                            DropDownController):
-            self.display_selected()
-        
-        # Only send midi if it is a main_controller:
-        if self.is_sub_controller:
+        if self.is_subcontroller:
+            self.parent.on_subcontroller_value(self)
             return
-            
+        
+        try:
+            self.display_selected()
+        except AttributeError:
+            pass
+        
+        print(type(self), self)
+        return
         self.send_cc()
 
         # Remember the prev value to check if value
         # only changes by one, allowing the use of more efficient midi
         # messaging available in some synths.
         self.prev_value = self.value
-    
+        
     def send_cc(self):
         """Sends out the contollers value over midi"""
         self.midi.send_cc(self.nrpn, self.get_value())
@@ -201,11 +212,6 @@ class BaseController(BoxLayout):
     def set_value(self, value): 
         """Sets controller's value."""
         self.value = value + self.offset    
-
-    def display_selected(self):
-        """Highlight selected value for appropriate controller types."""    
-        for child in [c for c in self.children if isinstance(c, Button)]:
-            child.state = 'down' if self.value in child.values else 'normal'
     
     def note(self, value):
         """Returns value as musical note."""
@@ -214,7 +220,7 @@ class BaseController(BoxLayout):
         return notes[value%12] + str(value//12)
     
     def __repr__(self):
-        return "<{}>:{} {}".format(self.nrpn, self.name, self.value)
+        return f"<{self.nrpn}>:{self.name} {self.value}"
 
 # Sub-classes for controller objects created in kv file:
 class SlideController(BaseController):
@@ -222,26 +228,70 @@ class SlideController(BaseController):
     
        The value is changed by moving the slider.
        Can be horizontal or vertical.
-       """
+       """ 
     pass
-
-
-class SwitchController(BaseController):
-    """A switch type controaller.
-    
-       The value is changed by clicking/touching the appropriate button.
-       """
-    pass
-
     
 class ToggleController(BaseController):
-    """A toggle switch type controller.
+    """A toggle button type controller.
     
-       A modal type controller, switched on or off by a click/single touch."""
+       A binary type controller, switched on or off by a click/single 
+       touch."""
     pass
 
+class RadioController(BaseController):
+    """A radio switch type conntroller.
+    
+       The controller made up of multiple radio buttons, where each 
+       one represents a value or values of the controller."""
+    
+    def setup(self):
+        """Setup controller.
+        
+           Makes list of buttons.
+           Displays controller."""
+        self.buttons = [c for c in self.children \
+                            if isinstance(c, RadioButton)]
+        
+        for button in self.buttons:
+            if button.all_other_values is True:
+                self.all_other_values_btn = button
+                
+        self.display_selected()
 
-class TouchController(BaseController):
+    def display_selected(self):
+        """Displays which button is selected for controller."""
+        for button in self.buttons:
+            if not button.all_other_values\
+             and self.value == button.value:
+                button.state = 'down'
+
+    def display_all_other_values_btn(self):
+        """Displays button that represents all other values when
+           controller is part of a dual controller"""
+        for button in self.buttons:
+            if button.all_other_values is True:
+                button.state = 'down'
+            else:
+                button.state = 'normal'
+
+
+class RadioButton(ToggleButton):
+    """A radio button.
+    
+       Only one radio button in a controller can be selected at any
+       time."""
+    def on_press(self):
+        """Radio button pressed.
+        
+           Sets value of radio-controller or runs other values button 
+           function in dual controller if it is such a button"""
+        if self.all_other_values:
+            self.parent.parent.on_other_values_btn_press(self.parent)
+        else:
+            self.parent.value = self.value
+
+
+class TouchController(BaseController): # rename swipe
     """A touch type controller.
     
        The value is changed by a touch/click then draging up or down, or 
@@ -287,19 +337,21 @@ class DropDownController(BaseController):
     
        The value is selected from a drop down list. """
     option_list = StringProperty('')
-    always_on = BooleanProperty(False)
+    # always_on = BooleanProperty(False) # ??
     
-    def setup(self, value):
+    def setup(self):
         """Creates the drop down list for the controller."""
         self.dropdown = DropDown()
         self.options = self.synth.options[self.option_list]
-        self.button = [widget for widget in self.children 
+        self.main_button = [widget for widget in self.children 
                        if isinstance(widget, Button)][0]
+
         for option in self.options:
             btn = Button(text=option, size_hint_y=None, height=30)
             btn.bind(on_release=lambda btn: self.dropdown.select(btn.text))
             self.dropdown.add_widget(btn)
-        self.button.bind(on_release=self.dropdown.open)
+            
+        self.main_button.bind(on_release=self.dropdown.open)
         self.dropdown.bind(on_select=self.select_option)
         self.display_selected()
 
@@ -309,12 +361,91 @@ class DropDownController(BaseController):
         
     def display_selected(self):
         """Displays chosen option."""
-        self.button.text = self.options[self.value]
+        self.main_button.text = self.options[self.value]
         if self.options[self.value] == 'Off':
-            self.button.state = 'normal'
+            self.main_button.state = 'normal'
         else:
-            self.button.state = 'down'
+            self.main_button.state = 'down'
+
+    def display_as_off(self):
+        """Sets dropdown to off. Used if controller is part of a 
+           dual controller"""
+        self.main_button.state = 'normal'
+        self.main_button.text = 'Off'
+        
+    
+
+class DualController(BaseController):
+    """A controller made up of two different types of controllers.
+       A list type controller (drop down, radio, toggle) and a numerical 
+       type controller (slider, swipe).
+    
+       """
+    
+    def setup(self):
+        """Makes a list of sub-controllers.
+           Sets their sub-controller flag.
+           Calls display selected function for all list type
+           sub-controllers"""
+        
+        self.subcontrollers = [c for c in self.children \
+                               if isinstance(c, BaseController)]
+        
+        if len(self.subcontrollers) != 2:
+            print("Error: Too many sub-controllers")
+                               
+        for sub in self.subcontrollers:
+            sub.is_subcontroller = True
+
+            try:
+                sub.display_selected()
+            except AttributeError:
+                pass
+       
+    def on_subcontroller_value(self, sub):
+        """Called when a sub-contoller changes its value.
+           
+           sub is the sub-controller.
+           Sets value of the dual-controller.
+           
+           If it is a list type controller:
+           Displays sub-contoller choice.
+           Doesn't set numeric type sub-controllers value so it can be 
+           'saved' for when the numeric typesub is re-activated.
+           
+           If it is a numeric type controller:
+           Calls on_other_values_btn_press method."""
+        
+        # add offset to go from sub to main value   
+        self.value = sub.value - sub.offset
+
+        other_sub = self.get_other_subcontroller(sub)
+
+        try:
+            sub.display_selected()
+        except AttributeError:
+            self.on_other_values_btn_press(other_sub)
             
+
+    
+    def get_other_subcontroller(self, sub):
+        """Returns the other sub-controller in the dual-controller."""
+        return [s for s in self.subcontrollers if s is not sub][0]
+        
+    def on_other_values_btn_press(self, sub):
+        """Sets dual-controllers value to the value of its numeric type
+           controller.
+           Displays the all_other_values option as selected."""
+        other_sub = self.get_other_subcontroller(sub)
+        
+        # subtract offset to go from sub to main value.
+        sub.value = other_sub.value - other_sub.offset
+        
+        if isinstance(sub, DropDownController):
+            sub.display_as_off()
+        elif isinstance(sub, RadioController):
+            sub.display_all_other_values_btn()
+
 def main(args):
     return 0
 
