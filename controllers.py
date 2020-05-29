@@ -140,6 +140,11 @@ class ControllerManager():
 
         return controllers_found[0] 
 
+    def print_all_controllers(self):
+        """Prints the value of every controller to stdout."""
+        for controller in self.controllers:
+            print (controller)
+
 class BaseController(BoxLayout):
     """Controller base class
        
@@ -191,9 +196,9 @@ class BaseController(BoxLayout):
             self.display_selected()
         except AttributeError:
             pass
-        
+
         print(type(self), self)
-        return
+
         self.send_cc()
 
         # Remember the prev value to check if value
