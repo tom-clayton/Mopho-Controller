@@ -1,10 +1,10 @@
 
 # To Do
 
+- [ ] LFO time syncs need to be unhighlighted at start
 - [x] Get saving working
 - [ ] Get loading working
-- [ ] Fix sub-controllers that dont change main controller
-- [x] Refactor contoller classes into seperate file
+- [ ] Split contoller classes and manager into seperate file
 - [ ] Split kv files
 - [ ] Add action bar
 - [ ] Add pages
@@ -13,3 +13,4 @@
 - [ ] Add midi linker
 - [ ] Allow custom control screens, i.e multiple synths
 - [ ] Add midi learn
+

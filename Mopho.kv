@@ -2,7 +2,9 @@
 
 # Offset notes:
 # Offset: Add offset to go from midi value to actual param value.
-# Subcontroller offset: Add offset to go from main controller value 
+# change to opposite????
+
+# Subcontroller offset: Subtract offset to go from main controller value 
 # to actual sub-controller param value or option index.
 
 
@@ -70,7 +72,7 @@
                         TouchController:
                             size_hint_x: 0.2
                             name: 'Width'
-                            offset: -4 
+                            offset: 4 
                 BoxLayout:
                     TouchController:
                         name: 'Osc 1: Freq'
@@ -122,7 +124,7 @@
                     TouchController:
                         size_hint_x: 0.2
                         name: 'Width'
-                        offset: -4
+                        offset: 4
                         
                 BoxLayout:
                     TouchController:
@@ -440,19 +442,13 @@
                         orientation: 'vertical'                            
                         DualController:
                             orientation: 'vertical'
+                            name: 'LFO 1 Freq'
                             nrpn: 37
                             HSlideController:
-                                name: 'Freq' 
-                                # values: range(0, 151)
-                                #nrpn: 37
                                 maximum: 150
                             DropDownController:
-                                #size_hint_y: 
                                 name: 'Time sync:'
-                                #is_sub_controller: True
-                                #nrpn: 37
-                                offset: -151
-                                values: range(151, 128)
+                                offset: 151
                                 option_list: 'time_syncs'
                         DropDownController:
                             #size_hint_y: 
@@ -480,20 +476,13 @@
                         orientation: 'vertical'                            
                         DualController:
                             orientation: 'vertical'
+                            name: 'LFO 2 Freq'
                             nrpn: 42
                             HSlideController:
-                                #size_hint_y: 
-                                name: 'Freq' 
-                                #values: range(0, 151)
-                                #nrpn: 37
                                 maximum: 150
                             DropDownController:
-                                #size_hint_y: 
                                 name: 'Time sync:'
-                                #is_sub_controller: True
-                                #nrpn: 37
-                                offset: -151
-                                #values: range(151, 128)
+                                offset: 151
                                 option_list: 'time_syncs'
                         DropDownController:
                             #size_hint_y: 
@@ -521,20 +510,13 @@
                         orientation: 'vertical'                            
                         DualController:
                             orientation: 'vertical'
+                            name: 'LFO 3 Freq'
                             nrpn: 47
                             HSlideController:
-                                #size_hint_y: 
-                                name: 'Freq' 
-                                values: range(0, 151)
-                                #nrpn: 37
                                 maximum: 150
                             DropDownController:
-                                #size_hint_y: 
                                 name: 'Time sync:'
-                                #is_sub_controller: True
-                                #nrpn: 37
-                                offset: -151
-                                #values: range(151, 128)
+                                offset: 151
                                 option_list: 'time_syncs'
                         DropDownController:
                             #size_hint_y: 
@@ -562,20 +544,13 @@
                         orientation: 'vertical'                            
                         DualController:
                             orientation: 'vertical'
+                            name: 'LFO 4 Freq'
                             nrpn: 52
                             HSlideController:
-                                #size_hint_y: 
-                                name: 'Freq' 
-                                #values: range(0, 151)
-                                #nrpn: 37
                                 maximum: 150
                             DropDownController:
-                                #size_hint_y: 
                                 name: 'Time sync:'
-                                #is_sub_controller: True
-                                #nrpn: 37
-                                offset: -151
-                                #values: range(151, 128)
+                                offset: 151
                                 option_list: 'time_syncs'
                         DropDownController:
                             #size_hint_y: 

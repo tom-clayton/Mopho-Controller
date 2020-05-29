@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-#  conroller_manager.py
+#  conrollers.py
 #  
 #  Copyright 2020 tom clayton <clayton_tom@yahoo.com>
 #  
@@ -48,19 +48,23 @@ raw_controllers = []
 class ControllerManager():
     def setup_controllers(self, midi, synth):
         """Creates list of main controllers.
-           Passes midi object to all controllers.
-           Sets up option lists for drop down controllers.
-           Creates 
-           Gets order of parameters.
-        """
+           Calls setup for controllers that need it.
+           Passes midi object to all main controllers."""
         self.synth = synth
         self.controllers = []
         for controller in raw_controllers:
             controller.synth = synth
+            
+            try:
+                controller.error_check()
+            except AttributeError:
+                pass
+                
             try:
                 controller.setup()
             except AttributeError:
                 pass
+            
             if not controller.is_subcontroller:
                 self.controllers.append(controller)
                 controller.midi = midi
@@ -179,7 +183,7 @@ class BaseController(BoxLayout):
     def __init__(self, **kwargs):
         super(BaseController, self).__init__(**kwargs)
         raw_controllers.append(self)
-        self.bind(on_value=self.on_value)
+        self.bind(on_value=self.on_value) # put in kivy file??
 
     def on_value(self, *args):
         """Responds to a change in controller value.
@@ -188,16 +192,23 @@ class BaseController(BoxLayout):
            Displays chosen value if approriate for controller.
            Sends out value over midi.
            """
+        
+
         if self.is_subcontroller:
             self.parent.on_subcontroller_value(self)
             return
+        
+        try:
+            self.on_dualcontroller_value()
+        except AttributeError:
+            pass
         
         try:
             self.display_selected()
         except AttributeError:
             pass
 
-        print(type(self), self)
+        print(self)
 
         self.send_cc()
 
@@ -225,7 +236,7 @@ class BaseController(BoxLayout):
         return notes[value%12] + str(value//12)
     
     def __repr__(self):
-        return f"<{self.nrpn}>:{self.name} {self.value}"
+        return f"{type(self)}<{self.nrpn}>:{self.name} {self.value}"
 
 # Sub-classes for controller objects created in kv file:
 class SlideController(BaseController):
@@ -265,25 +276,22 @@ class RadioController(BaseController):
 
     def display_selected(self):
         """Displays which button is selected for controller."""
+        selected = False
         for button in self.buttons:
             if not button.all_other_values\
              and self.value == button.value:
                 button.state = 'down'
-
-    def display_all_other_values_btn(self):
-        """Displays button that represents all other values when
-           controller is part of a dual controller"""
-        for button in self.buttons:
-            if button.all_other_values is True:
-                button.state = 'down'
+                selected = True
             else:
                 button.state = 'normal'
+        if not selected:
+            self.all_other_values_btn.state = 'down'
 
 
 class RadioButton(ToggleButton):
     """A radio button.
     
-       Only one radio button in a controller can be selected at any
+       Only one radio button in a controon_other_valuesller can be selected at any
        time."""
     def on_press(self):
         """Radio button pressed.
@@ -291,10 +299,9 @@ class RadioButton(ToggleButton):
            Sets value of radio-controller or runs other values button 
            function in dual controller if it is such a button"""
         if self.all_other_values:
-            self.parent.parent.on_other_values_btn_press(self.parent)
+            self.parent.parent.switch_to_numeric()
         else:
             self.parent.value = self.value
-
 
 class TouchController(BaseController): # rename swipe
     """A touch type controller.
@@ -336,7 +343,6 @@ class TouchController(BaseController): # rename swipe
             return value
         return self.maximum if value > self.maximum else self.minimum
 
-
 class DropDownController(BaseController):
     """A drop down type controller.
     
@@ -363,93 +369,103 @@ class DropDownController(BaseController):
     def select_option(self, i, option):
         """Sets controller value to chosen option."""
         self.value = self.options.index(option)
+    
+    # call display selected on dropdown close somehow
         
     def display_selected(self):
         """Displays chosen option."""
-        self.main_button.text = self.options[self.value]
-        if self.options[self.value] == 'Off':
+        try:
+            self.main_button.text = self.options[self.value]
+        except IndexError:
+            self.main_button.text = 'Off'
+        
+        if self.main_button.text == 'Off':
             self.main_button.state = 'normal'
         else:
             self.main_button.state = 'down'
-
-    def display_as_off(self):
-        """Sets dropdown to off. Used if controller is part of a 
-           dual controller"""
-        self.main_button.state = 'normal'
-        self.main_button.text = 'Off'
         
-    
-
+        
 class DualController(BaseController):
     """A controller made up of two different types of controllers.
-       A list type controller (drop down, radio, toggle) and a numerical 
+       A list type controller (drop down, radio) and a numerical 
        type controller (slider, swipe).
     
-       """
-    
+       The numeric type controller remembers its value when it is
+       de-activated with the list type controller."""
+       
     def setup(self):
         """Makes a list of sub-controllers.
            Sets their sub-controller flag.
-           Calls display selected function for all list type
-           sub-controllers"""
-        
+           Sets list and numeric controller."""
+
         self.subcontrollers = [c for c in self.children \
                                if isinstance(c, BaseController)]
         
-        if len(self.subcontrollers) != 2:
-            print("Error: Too many sub-controllers")
-                               
+        self.list_controller = None
+        self.numeric_controller = None
+        
         for sub in self.subcontrollers:
             sub.is_subcontroller = True
-
+            if type(sub) in [RadioController, DropDownController]:
+                self.list_controller = sub
+            elif isinstance(sub, SlideController) or \
+                    isinstance(sub, TouchController):
+                self.numeric_controller = sub
             try:
                 sub.display_selected()
             except AttributeError:
                 pass
-       
-    def on_subcontroller_value(self, sub):
-        """Called when a sub-contoller changes its value.
-           
-           sub is the sub-controller.
-           Sets value of the dual-controller.
-           
-           If it is a list type controller:
-           Displays sub-contoller choice.
-           Doesn't set numeric type sub-controllers value so it can be 
-           'saved' for when the numeric typesub is re-activated.
-           
-           If it is a numeric type controller:
-           Calls on_other_values_btn_press method."""
-        
-        # add offset to go from sub to main value   
-        self.value = sub.value - sub.offset
-
-        other_sub = self.get_other_subcontroller(sub)
-
-        try:
-            sub.display_selected()
-        except AttributeError:
-            self.on_other_values_btn_press(other_sub)
-            
-
     
-    def get_other_subcontroller(self, sub):
-        """Returns the other sub-controller in the dual-controller."""
-        return [s for s in self.subcontrollers if s is not sub][0]
+    def on_subcontroller_value(self, subcontroller):
+        """Called when a sub-controller changes its value."""
+        if subcontroller is self.numeric_controller:
+            self.switch_to_numeric()
+        elif subcontroller is self.list_controller:
+            self.set_main_value_from_list_value()
+
+    def on_dualcontroller_value(self):
+        """Called when the dual-controller changes its value."""
+        self.set_numeric_value_from_main()
+        self.set_list_value_from_main_value()
         
-    def on_other_values_btn_press(self, sub):
-        """Sets dual-controllers value to the value of its numeric type
-           controller.
-           Displays the all_other_values option as selected."""
-        other_sub = self.get_other_subcontroller(sub)
+    def display_selected(self):
+        """Display the selected button/option on the list controller."""
+        self.list_controller.display_selected()
+    
+    def switch_to_numeric(self):
+        """Sets dual-controllers value from numeric value and changes
+           list controllers value.
+           There isn't an equivilent for the list controller as the 
+           numeric controllers value is 'saved' for when it is used
+           again.""" 
+        self.set_main_value_from_numeric_value()
+        self.set_list_value_from_main_value()
+        self.display_selected()
         
-        # subtract offset to go from sub to main value.
-        sub.value = other_sub.value - other_sub.offset
-        
-        if isinstance(sub, DropDownController):
-            sub.display_as_off()
-        elif isinstance(sub, RadioController):
-            sub.display_all_other_values_btn()
+    def set_main_value_from_numeric_value(self):
+        """Sets value of dual-controller from numeric subcontroller
+           value."""
+        self.value = self.numeric_controller.value \
+                        + self.numeric_controller.offset
+                        
+    def set_main_value_from_list_value(self):
+        """Sets value of dual-controller from list subcontroller
+           value."""
+        self.value = self.list_controller.value \
+                        + self.list_controller.offset                    
+    
+    def set_list_value_from_main_value(self):
+        """Sets value of numeric subcontroller from dual-controller
+           value."""
+        self.list_controller.value = self.value \
+                        - self.list_controller.offset  
+                        
+    def set_numeric_value_from_main_value(self):
+        """Sets value of list subcontroller from dual-controller
+           value."""
+        self.numeric_controller.value = self.value \
+                        - self.numeric_controller.offset  
+
 
 def main(args):
     return 0
