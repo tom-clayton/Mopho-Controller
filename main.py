@@ -34,14 +34,9 @@ from kivy.app import App
 # Remove not needed imports:
 
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.floatlayout import FloatLayout #?
-from kivy.uix.actionbar import ActionBar
+# from kivy.uix.actionbar import ActionBar
 from kivy.clock import Clock
-
-#from kivy.factory import Factory
-
 from kivy.lang import Builder
-
 
 import controllers
 import midi_interface
@@ -55,10 +50,11 @@ Builder.load_file('Mopho.kv') # And this kivy file load
 
 class MainScreen(BoxLayout):
     """The main screen."""
-    def __init__(self, midi, file_manager, **kwargs):
+    def __init__(self, midi, file_manager, controllers, **kwargs):
         super(MainScreen, self).__init__(**kwargs)
         self.midi = midi
         self.file_manager = file_manager
+        self.controllers = controllers
     
     # Move these when action bar created:
     def save_program(self):
@@ -69,6 +65,9 @@ class MainScreen(BoxLayout):
     
     def request_current_program(self):
         self.midi.request_current_program()
+        
+    def send_current_program(self):
+        self.controllers.send_program()
     
 
 class MainApp(App):
@@ -86,7 +85,7 @@ class MainApp(App):
                                     
     def build(self):
         """Builds the main screen from kv file and returns it to kivy."""
-        return MainScreen(self.midi, self.file_manager)
+        return MainScreen(self.midi, self.file_manager, self.controllers)
 
 
 

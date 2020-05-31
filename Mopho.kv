@@ -40,6 +40,10 @@
             size_hint_x: 0.2
             text: 'Recieve'
             on_press: root.request_current_program()
+        Button:
+            size_hint_x: 0.2
+            text: 'Send'
+            on_press: root.send_current_program()
     BoxLayout:
         # Row 1:
         orientation: 'horizontal'
@@ -53,6 +57,7 @@
                         name: 'Osc 1 Shape'
                         nrpn: 2
                         RadioController:
+                            midirange: (0, 3)
                             name: 'Osc 1 radio'
                             RadioButton:
                                 text: 'Off'
@@ -72,7 +77,8 @@
                         TouchController:
                             size_hint_x: 0.2
                             name: 'Width'
-                            offset: 4 
+                            midirange: (4, 127)
+                             
                 BoxLayout:
                     TouchController:
                         name: 'Osc 1: Freq'
@@ -106,6 +112,7 @@
                     nrpn: 7
                     RadioController:
                         name: 'Osc 2 radio'
+                        midirange: (0, 3)
                         RadioButton:
                             text: 'Off'
                             value: 0
@@ -124,7 +131,7 @@
                     TouchController:
                         size_hint_x: 0.2
                         name: 'Width'
-                        offset: 4
+                        midirange: (4, 127)
                         
                 BoxLayout:
                     TouchController:
@@ -445,10 +452,12 @@
                             name: 'LFO 1 Freq'
                             nrpn: 37
                             HSlideController:
+                                name: 'Freq'
                                 maximum: 150
+                                midirange: (0, 150)
                             DropDownController:
                                 name: 'Time sync:'
-                                offset: 151
+                                midirange: (151, 166)
                                 option_list: 'time_syncs'
                         DropDownController:
                             #size_hint_y: 
@@ -480,9 +489,10 @@
                             nrpn: 42
                             HSlideController:
                                 maximum: 150
+                                midirange: (0, 150)
                             DropDownController:
                                 name: 'Time sync:'
-                                offset: 151
+                                midirange: (151, 166)
                                 option_list: 'time_syncs'
                         DropDownController:
                             #size_hint_y: 
@@ -514,9 +524,10 @@
                             nrpn: 47
                             HSlideController:
                                 maximum: 150
+                                midirange: (0, 150)
                             DropDownController:
                                 name: 'Time sync:'
-                                offset: 151
+                                midirange: (151, 166)
                                 option_list: 'time_syncs'
                         DropDownController:
                             #size_hint_y: 
@@ -548,9 +559,10 @@
                             nrpn: 52
                             HSlideController:
                                 maximum: 150
+                                midirange: (0, 150)
                             DropDownController:
                                 name: 'Time sync:'
-                                offset: 151
+                                midirange: (151, 166)
                                 option_list: 'time_syncs'
                         DropDownController:
                             #size_hint_y: 

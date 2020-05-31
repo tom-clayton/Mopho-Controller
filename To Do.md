@@ -1,11 +1,11 @@
 
 # To Do
 
-- [ ] LFO time syncs need to be unhighlighted at start
 - [x] Get saving working
 - [ ] Get loading working
+- [ ] Use full names in synth kv file
 - [ ] Split contoller classes and manager into seperate file
-- [ ] Split kv files
+- [ ] Remove screen parts from synth kv file
 - [ ] Add action bar
 - [ ] Add pages
 - [ ] Add sequencer control to mopho
