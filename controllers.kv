@@ -1,4 +1,8 @@
 
+# controllers.kv
+
+# Kivy layouts for the different types of controllers.
+
 <HSlideController@SlideController>
     orientation: 'vertical'
     Label:
@@ -56,7 +60,7 @@
     group: self.parent.name
     allow_no_selection: False
     all_other_values: False
-    on_release: self.on_press()
+    on_press: self.on_press()
 
 <ToggleController>
     ToggleButton:

@@ -23,7 +23,7 @@
 #  
 from kivy.properties import NumericProperty, StringProperty,\
                             BooleanProperty, ObjectProperty,\
-                            BoundedNumericProperty
+                            BoundedNumericProperty, ListProperty
                             #OptionProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
@@ -51,6 +51,7 @@ class ControllerManager():
            Calls setup for controllers that need it.
            Passes midi object to all main controllers."""
         self.synth = synth
+        self.midi = midi
         
         for controller in all_controllers:
             controller.synth = synth   
@@ -63,75 +64,84 @@ class ControllerManager():
        
         for controller in all_controllers:
             controller.display_selected()
-            
-        for controller in self.controllers:
-            controller.midi = midi
-            
+                
+        # create ordered list including blank controllers for parameter
+        # we are not controlling but still want to loaded, saved and 
+        # sent to the synth:
         
-        # Load not working!
-        # Could this be setup on init as a list of 
-        # kivy properties, so they automatically update for loading
-        # and saving, etc ??        
-        self.controller_values = tuple([0 for x in range(
-                                    self.synth.number_of_parameters)])
-                                    
+        self.ordered_controllers = []
+        
         if hasattr(self.synth, 'nrpn_order'):
             self.nrpn_order = self.synth.nrpn_order
         else:
             self.nrpn_order = range(self.synth.number_of_parameters)
             
+        for i, nrpn in enumerate(self.nrpn_order):
+            if nrpn is not None:
+                try:
+                    self.ordered_controllers.append(
+                                self.controller_from_nrpn(nrpn))
+                except IndexError:
+                    blank = BaseController()
+                    blank.nrpn = nrpn
+                    self.ordered_controllers.append(blank)
+            else:
+                self.ordered_controllers.append(None)
+            
+        print(self.synth.number_of_parameters, 
+              len(self.nrpn_order), 
+              len(self.ordered_controllers))
+            
+        for controller in [c for c in self.ordered_controllers if c is 
+                                                        not None]:
+            controller.midi = midi
+        
     def set_controller_value(self, nrpn, value):
         """Sets relevant controllers value"""
         try:
             controller = self.controller_from_nrpn(nrpn)
             controller.set_value(value)
         except IndexError:
+            # print(f"No controller for {nrpn}")
             pass
-
+            
     def set_all_values(self, values):
         """Sets all controllers values from tuple of values in order
-           they come from a program dump.
-           Saves a reference to tuple so the app can load, save and 
-           upload parameter values which are not controlled by the app.
-           """
+           they come from a program dump."""
+        for i, value in enumerate(values):
+            controller = self.ordered_controllers[i]
+            if controller is not None:
+                controller.set_value(value)
         
-        # see note in setup_controllers method   
-        self.controller_values = values
-
-        for i, nrpn in enumerate(self.nrpn_order):
-            if nrpn is not None:
-                self.set_controller_value(nrpn, values[i])
-        #print(self.controller_values)
-        #self.print_all_controllers()
-
     def send_program(self):
         """Sends value for every main controller."""
-        for controller in self.controllers:
-            controller.send_cc()
-            
+        for controller in self.ordered_controllers:
+            if controller is not None:
+                controller.send_cc()
+          
     def get_save_data(self):
         """Returns a bytearray of all synth parameter values, including 
            ones not controlled by a controller."""
-        
-        # see note in setup_controllers method 
         output = []   
-        for i, nrpn in enumerate(self.nrpn_order):
-            try:
-                output.append(self.controller_from_nrpn(nrpn)\
-                                .get_value())
-            except IndexError:
-                output.append(self.controller_values[i])
-        
+        for i, controller in enumerate(self.ordered_controllers):
+            if controller is not None:
+                output.append(controller.get_value())
+            else:
+                output.append(0)
+
         return bytearray(output)
     
-    def set_load_data(self, data):
+    def set_load_data(self, binary_data):
         """Receives load data from file manager."""
-        data = [x for x in fo.read()]
+        data = [x for x in binary_data]
+        self.midi.pause_midi_out = True
         self.set_all_values(data)
+        self.midi.pause_midi_out = False
+        self.send_program()
                 
     def controller_from_nrpn(self, nrpn):
         """Returns controller with given nrpn number.
-           Will give IndexError if there isn't one."""
+           Will raise IndexError if there isn't one."""
         controllers_found =  [c for c in self.controllers \
                                     if c.nrpn == nrpn]
                                 
@@ -147,6 +157,12 @@ class ControllerManager():
     def print_all_controllers(self):
         """Prints the value of every controller to stdout."""
         for controller in self.controllers:
+            print (controller)
+            
+    def print_ordered_controllers(self):
+        """Prints the value of every controller (including blanks) 
+           to stdout."""
+        for controller in self.ordered_controllers:
             print (controller)
 
 class BaseController(BoxLayout):
@@ -209,15 +225,10 @@ class BaseController(BoxLayout):
             self.parent.on_subcontroller_value(self)
             return
         
-        try:
+        if isinstance(self, DualController):
             self.on_dualcontroller_value()
-        except AttributeError:
-            pass
         
-        try:
-            self.display_selected()
-        except AttributeError:
-            pass
+        self.display_selected()
 
         print("CC:", self)
 
@@ -278,7 +289,11 @@ class ToggleController(BaseController):
     
        A binary type controller, switched on or off by a click/single 
        touch."""
-    pass
+    def display_selected(self):
+        self.button = [c for c in self.children \
+                            if isinstance(c, Button)][0]
+                            
+        self.button.state = 'down' if self.value == 1 else 'normal' 
 
 class RadioController(BaseController):
     """A radio switch type conntroller.

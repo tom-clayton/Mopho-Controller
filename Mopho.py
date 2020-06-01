@@ -67,7 +67,6 @@ class Synth():
     # It may be possible to store these in the kivy file and use a kivy
     # option property.
     
-    
     # The total number of parameters in the synth goes here:
     number_of_parameters = 256
                        
@@ -99,21 +98,17 @@ class Synth():
     # are equal to the paramter's position in a program dump, the rest 
     # can be left out.
     
-    # Note: This will be changed to a (position, nrpn) tuple to save 
+    # Note: This maybe changed to a (position, nrpn) tuple to save 
     # confusion.
-    
-    # The number of midi_messages that a control change comes from the 
-    # synth in goes here:
-    cc_message_chunks = 4
     
     # The message to request a current program data dump from the synth 
     # via sysex messaging. As a bytes object, without sysex demimiters goes
     # here:
     current_program_dump_request = b'\x01\x25\x06'
     
-    # The number of midi messages that the program dump comes from the
+    # The number of midi messages that a cc midi message comes from the
     # synth in goes here:
-    program_dump_message_chunks = 2
+    cc_message_chunks = 4
     
     # Methods which will overide the base class with behaviour unique
     # to the synth (Can be left out to use default behaviour of base

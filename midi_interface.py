@@ -140,7 +140,7 @@ class Midi():
             event = alsaseq.input()
             if event[0] == alsaseq.SND_SEQ_EVENT_SYSEX:
                 data += event[-1] 
-        print(len(data), data[-2:])
+
         unpacked_data = self.synth.unpack_program_data(data[:-1])
         
         self.pause_midi_out = True
