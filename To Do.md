@@ -2,7 +2,7 @@
 # To Do
 
 - [x] Get saving working
-- [ ] Get loading working
+- [x] Get loading working
 - [ ] Use full names in synth kv file
 - [ ] Split contoller classes and manager into seperate file
 - [ ] Remove screen parts from synth kv file
