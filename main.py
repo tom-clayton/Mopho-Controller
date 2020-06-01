@@ -38,7 +38,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.clock import Clock
 from kivy.lang import Builder
 
-import controllers
+import controller_manager
 import midi_interface
 import file_manager
 
@@ -73,7 +73,7 @@ class MainScreen(BoxLayout):
 class MainApp(App):
     """The main application"""
     synth = Mopho.Synth() # see note by import
-    controllers = controllers.ControllerManager()
+    controllers = controller_manager.ControllerManager()
     midi = midi_interface.Midi(synth, controllers)
     file_manager = file_manager.FileManager(controllers)
 
@@ -86,8 +86,6 @@ class MainApp(App):
     def build(self):
         """Builds the main screen from kv file and returns it to kivy."""
         return MainScreen(self.midi, self.file_manager, self.controllers)
-
-
 
 def main():
     app = MainApp()
