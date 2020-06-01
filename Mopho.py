@@ -74,7 +74,9 @@ class Synth():
     # If the paramters are not numberered in the order they come in a 
     # program dump, the order of nrpns must go here:
     # If all parameters come in nrpn order this tuple should be left out.                   
-    # Only use for used parmeter slot, not parameters not controlled.
+    # Only use None for unused parmeter slot, not for parameters that
+    # aren't being controlled by the program.
+    
     nrpn_order = tuple ([0, 1, 2, 3, 4, 114, 5, 6, 7, 8, 9, 115, 10, 11, 12, 
                     93, 96, 13, 14, 116, 15, 16, 17, 18, 19, 20, 21, 22, 
                     23, 24, 25, 26, 27, 30, 31, 32, 33, 34, 35, 36, 29, 
@@ -156,9 +158,10 @@ class Synth():
         elif midi_data[2] == 0x03:
             # Edit buffer data dump.
             packed_data = midi_data[3:]
-        
+
         # Unpack:
         unpacked_data = []
+
 
         for i in range(0, len(packed_data), 8):
             chunk = packed_data[i: i+8]
@@ -170,7 +173,7 @@ class Synth():
                 else:
                     unpacked_data.append(byte)
                 mask = mask << 1
-                
+    
         return tuple(unpacked_data)
 
 def main(args):

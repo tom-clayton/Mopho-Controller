@@ -112,8 +112,8 @@ class Midi():
     def receive_sysex(self, event):
         """Recieves system exclusive midi event.
         
-           Recieves data in two chunks.
-           Strips packing bytes.
+           Recieves data in chunks.
+           Strips sysex bytes.
            Sets values for all relevent controllers.
            """   
 
@@ -125,18 +125,23 @@ class Midi():
         print("Incoming program dump")
        
         # Strip data from messages and combine:
-        data = event[-1][1:-1]
+        data = event[-1][1:]
+
+        # total_chunks = self.synth.program_dump_message_chunks
+        # n_chunks = 1
         
-        total_chunks = self.synth.program_dump_message_chunks
-        n_chunks = 1
+        # while n_chunks < total_chunks:
+            # event = alsaseq.input()
+            # if event[0] == alsaseq.SND_SEQ_EVENT_SYSEX:
+                # data += event[-1] # does this need stripping too?
+                # n_chunks += 1
         
-        while n_chunks < total_chunks:
+        while data[-1] != 0xF7:
             event = alsaseq.input()
             if event[0] == alsaseq.SND_SEQ_EVENT_SYSEX:
-                data += event[-1] # does this need stripping too?
-                n_chunks += 1
-        
-        unpacked_data = self.synth.unpack_program_data(data)
+                data += event[-1] 
+        print(len(data), data[-2:])
+        unpacked_data = self.synth.unpack_program_data(data[:-1])
         
         self.pause_midi_out = True
         self.controllers.set_all_values(unpacked_data)
