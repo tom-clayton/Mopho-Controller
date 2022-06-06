@@ -1,161 +1,124 @@
 
-
-# Offset notes:
-# Offset: Add offset to go from midi value to actual param value.
-# change to opposite????
-
-# Subcontroller offset: Subtract offset to go from main controller value 
-# to actual sub-controller param value or option index.
-
-
-
+# kivy rule, add to rules.kv file:
 <Module@BoxLayout>
     padding: 5
     active: False
-
-
-# this is a test to see if having option lists here instead of in synth 
-# py file is possible.
-<sources>
-    value: [1, 2, 3]
     
-# Move mainscreen to a mainscreen kv file, this file should be 
-# for mopho only stuff.
-<MainScreen>:    
-    orientation: 'vertical'
-    BoxLayout:
-        size_hint_y: 0.15
-        Label:
-            text: 'Mopho Controller'
-            font_size: 24
-        Button:
-            size_hint_x: 0.2
-            text: 'Load'
-            on_press: root.load_program()
-        Button:
-            size_hint_x: 0.2
-            text: 'Save'
-            on_press: root.save_program()
-        Button:
-            size_hint_x: 0.2
-            text: 'Recieve'
-            on_press: root.request_current_program()
-        Button:
-            size_hint_x: 0.2
-            text: 'Send'
-            on_press: root.send_current_program()
-    BoxLayout:
-        # Row 1:
-        orientation: 'horizontal'
-        size_hint_y: 1.2
-        Module: # ---------------- Osc 1 --------------------#
-            BoxLayout:    
-                orientation: 'vertical'
-                BoxLayout:
-                    padding: 3
-                    DualController:
-                        name: 'Osc 1 Shape'
-                        nrpn: 2
-                        RadioController:
-                            midirange: (0, 3)
-                            name: 'Osc 1 radio'
-                            RadioButton:
-                                text: 'Off'
-                                value: 0
-                            RadioButton:
-                                text: 'Saw'
-                                value: 1
-                            RadioButton:
-                                text: 'Tri'
-                                value: 2
-                            RadioButton:
-                                text: 'Saw/Tri'
-                                value: 3
-                            RadioButton:
-                                text: 'Pulse'
-                                all_other_values: True
-                        TouchController:
-                            size_hint_x: 0.2
-                            name: 'Width'
-                            midirange: (4, 127)
-                             
-                BoxLayout:
-                    TouchController:
-                        name: 'Osc 1: Freq'
-                        nrpn: 0
-                        maximum: 120
-                        # add a midi notes flag rather than link to func???
-                        display_function: self.note 
-                    HSlideController:
-                        size_hint_x: 2
-                        name: 'Osc 1 Fine'
-                        nrpn: 1
-                        minimum: -50
-                        maximum: 50
-                        offset: -50
-                    ToggleController:
-                        name: 'Keyboard'
-                        nrpn: 4
-                    TouchController:
-                        name: 'Glide'
-                        nrpn: 3
-            VSlideController:
-                size_hint_x: 0.1
-                name: 'Sub Osc'
-                nrpn: 114 
+
+BoxLayout:
+    # Row 1:
+    synth: 'mopho'
+    orientation: 'horizontal'
+    size_hint_y: 0.1
+
+    Module: # ---------------- Osc 1 --------------------#    
+        orientation: 'vertical'
+        BoxLayout:
+            padding: 3    
+            RadioController:
+                group: 'osc 2 shape'
+                name: 'Osc 1 Shape'
+                nrpn: 2   
+                RadioButton:
+                    text: 'Off'
+                    value: 0
+                RadioButton:
+                    text: 'Saw'
+                    value: 1
+                RadioButton:
+                    text: 'Tri'
+                    value: 2
+                RadioButton:
+                    text: 'Saw/Tri'
+                    value: 3
+                RadioButton:
+                    text: 'Pulse'
+                    minimum: 4
+                    maximum: 103
+                SwipeController:
+                    nrpn: 2
+                    size_hint_x: 0.2
+                    name: 'Width'
+                    minimum: 100
+                    maximum: 150
+                     
+        BoxLayout:
+            SwipeController:
+                name: 'Osc 1: Freq'
+                nrpn: 0
+                maximum: 120
+                notes: True
+            HSlideController:
+                size_hint_x: 2
+                name: 'Osc 1 Fine'
+                nrpn: 1
+                minimum: -50
+                maximum: 50
+                offset: 50
+            ToggleController:
+                name: 'Keyboard'
+                nrpn: 4
+            SwipeController:
+                name: 'Glide'
+                nrpn: 3
+    VSlideController:
+        size_hint_x: 0.1
+        name: 'Sub Osc'
+        nrpn: 114 
             
         Module: # ---------------- Osc 2 --------------------#
-            BoxLayout:
-                orientation: 'vertical'
-                DualController:
-                    name: 'Osc 2 Shape'
-                    nrpn: 7
-                    RadioController:
-                        name: 'Osc 2 radio'
-                        midirange: (0, 3)
-                        RadioButton:
-                            text: 'Off'
-                            value: 0
-                        RadioButton:
-                            text: 'Saw'
-                            value: 1
-                        RadioButton:
-                            text: 'Tri'
-                            value: 2
-                        RadioButton:
-                            text: 'Saw/Tri'
-                            value: 3
-                        RadioButton:
-                            text: 'Pulse'
-                            all_other_values: True
-                    TouchController:
-                        size_hint_x: 0.2
-                        name: 'Width'
-                        midirange: (4, 127)
+            orientation: 'vertical'      
+            RadioController:
+                group: 'osc 2 shape'
+                name: 'Osc 2 Shape'
+                nrpn: 7
+                RadioButton:
+                    text: 'Off'
+                    value: 0
+                RadioButton:
+                    text: 'Saw'
+                    value: 1
+                RadioButton:
+                    text: 'Tri'
+                    value: 2
+                RadioButton:
+                    text: 'Saw/Tri'
+                    value: 3
+                RadioButton:
+                    text: 'Pulse'
+                    minimum: 4
+                    maximum: 103  
+                SwipeController:
+                    size_hint_x: 0.2
+                    name: 'Width'
+                    minimum: 100
+                    maximum: 150
                         
-                BoxLayout:
-                    TouchController:
-                        name: 'Osc 2: Freq'
-                        nrpn: 5
-                        maximum: 120
-                        display_function: self.note
-                    HSlideController:
-                        size_hint_x: 2
-                        name: 'Osc 2 Fine'
-                        nrpn: 6
-                        minimum: -50
-                        maximum: 50
-                        offset: -50
-                    ToggleController:
-                        name: 'Keyboard'
-                        nrpn: 9
-                    TouchController:
-                        name: 'Glide'
-                        nrpn: 8
-            VSlideController:
-                size_hint_x: 0.1
-                name: 'Sub Osc'
-                nrpn: 115
+            BoxLayout:
+                SwipeController:
+                    name: 'Osc 2: Freq'
+                    nrpn: 5
+                    maximum: 120
+                    notes: True
+                HSlideController:
+                    size_hint_x: 2
+                    name: 'Osc 2 Fine'
+                    nrpn: 6
+                    minimum: -50
+                    maximum: 50
+                    offset: 50
+                ToggleController:
+                    name: 'Keyboard'
+                    nrpn: 9
+                SwipeController:
+                    name: 'Glide'
+                    nrpn: 8
+
+        VSlideController:
+            size_hint_x: 0.1
+            name: 'Sub Osc'
+            nrpn: 115
+
         Module: #----------------Mixer-------------------#
             size_hint_x: 0.8
             BoxLayout:
@@ -167,15 +130,15 @@
                     ToggleController:
                         name: 'Sync'
                         nrpn: 10
-                    TouchController:
+                    SwipeController:
                         name: 'Slop'
                         nrpn: 12
                         maximum: 5
-                    TouchController:
+                    SwipeController:
                         name: 'Bend'
                         nrpn: 93
                         maximum: 12
-                    TouchController:
+                    SwipeController:
                         name: 'Input'
                         nrpn: 116  
                 DropDownController:
@@ -203,6 +166,7 @@
                 Label:
                     text: 'Poles'
                 RadioController:
+                    group: 'filter poles'
                     name: 'filter poles'
                     nrpn: 19
                     RadioButton:
@@ -211,13 +175,13 @@
                     RadioButton:
                         text: '4'
                         value: 1
-                TouchController:
+                SwipeController:
                     name: 'Keyboard'
                     nrpn: 17
-                TouchController:
+                SwipeController:
                     name: 'Mod'
                     nrpn: 18
-                TouchController:
+                SwipeController:
                     name: 'Velocity'
                     nrpn: 21        
             VSlideController:
@@ -253,23 +217,23 @@
                     nrpn: 20
                     minimum: -127
                     maximum: 127
-                    offset: -127
+                    offset: 127
         Module: #---------------VCA-----------------#
             BoxLayout:
                 size_hint_x: 0.2
                 orientation: 'vertical'
                 Label:
                     text: 'VCA'
-                TouchController:
+                SwipeController:
                     name: 'Initial'
                     nrpn: 27
-                TouchController:
+                SwipeController:
                     name: 'Envelope'
                     nrpn: 30        
-                TouchController:
+                SwipeController:
                     name: 'Velocity'
                     nrpn: 31
-                TouchController:
+                SwipeController:
                     name: 'Volume'
                     nrpn: 29
             BoxLayout:
@@ -296,13 +260,12 @@
             orientation: 'vertical'
             Module: #--------------- Env 3 -----------------#
                 size_hint_y: 0.8
-                active: False #???
                 BoxLayout:
                     size_hint_x: 0.2
                     orientation: 'vertical'
                     Label:
                         text: 'Envelope 3'       
-                    TouchController:
+                    SwipeController:
                         name: 'Velocity'
                         nrpn: 59
                     ToggleController:
@@ -315,7 +278,6 @@
                         name: 'Envelope 3 Destination:'
                         nrpn: 57
                         option_list: 'destinations'
-                        on_value: self.parent.parent.active = True; #???
                     BoxLayout:
                         size_hint_y: 3.5
                         VSlideController:
@@ -338,7 +300,7 @@
                         nrpn: 58
                         minimum: -127
                         maximum: 127
-                        offset: -127
+                        offset: 127
                     
             # Col 1 still:
             BoxLayout:
@@ -355,7 +317,7 @@
                         nrpn: 66 
                         minimum: -127
                         maximum: 127
-                        offset: -127
+                        offset: 127
                     DropDownController:
                         size_hint_y: 0.5 
                         name: 'Destination:'
@@ -373,7 +335,7 @@
                         nrpn: 69 
                         minimum: -127
                         maximum: 127
-                        offset: -127
+                        offset: 127
                     DropDownController:
                         size_hint_y: 0.5 
                         name: 'Destination:'
@@ -391,7 +353,7 @@
                         nrpn: 72
                         minimum: -127
                         maximum: 127
-                        offset: -127
+                        offset: 127
                     DropDownController:
                         size_hint_y: 0.5 
                         name: 'Destination:'
@@ -409,7 +371,7 @@
                         nrpn: 75
                         minimum: -127
                         maximum: 127
-                        offset: -127
+                        offset: 127
                     DropDownController:
                         size_hint_y: 0.5 
                         name: 'Destination:'
@@ -425,7 +387,7 @@
                         nrpn: 81
                         minimum: -127
                         maximum: 127
-                        offset: -127
+                        offset: 127
                     DropDownController:
                         size_hint_y: 0.5 
                         name: 'Destination:'
@@ -447,18 +409,22 @@
                 BoxLayout:
                     BoxLayout:
                         orientation: 'vertical'                            
-                        DualController:
+                        BoxLayout:
                             orientation: 'vertical'
                             name: 'LFO 1 Freq'
                             nrpn: 37
                             HSlideController:
+                                nrpn: 37
                                 name: 'Freq'
                                 maximum: 150
-                                midirange: (0, 150)
                             DropDownController:
+                                nrpn: 37
                                 name: 'Time sync:'
-                                midirange: (151, 166)
                                 option_list: 'time_syncs'
+                                Option:
+                                    name: 'Freq'
+                                    minimum: 151
+                                    maximum: 166
                         DropDownController:
                             #size_hint_y: 
                             name: 'Shape:'
@@ -483,17 +449,22 @@
                 BoxLayout:
                     BoxLayout:
                         orientation: 'vertical'                            
-                        DualController:
+                        BoxLayout:
                             orientation: 'vertical'
                             name: 'LFO 2 Freq'
                             nrpn: 42
                             HSlideController:
+                                nrpn: 42
+                                name: 'Freq'
                                 maximum: 150
-                                midirange: (0, 150)
                             DropDownController:
+                                nrpn: 42
                                 name: 'Time sync:'
-                                midirange: (151, 166)
                                 option_list: 'time_syncs'
+                                Option:
+                                    name: 'Freq'
+                                    minimum: 151
+                                    maximum: 166
                         DropDownController:
                             #size_hint_y: 
                             name: 'Shape:'
@@ -518,17 +489,22 @@
                 BoxLayout:
                     BoxLayout:
                         orientation: 'vertical'                            
-                        DualController:
+                        BoxLayout:
                             orientation: 'vertical'
                             name: 'LFO 3 Freq'
                             nrpn: 47
                             HSlideController:
+                                nrpn: 47
+                                name: 'Freq'
                                 maximum: 150
-                                midirange: (0, 150)
                             DropDownController:
+                                nrpn: 47
                                 name: 'Time sync:'
-                                midirange: (151, 166)
                                 option_list: 'time_syncs'
+                                Option:
+                                    name: 'Freq'
+                                    minimum: 151
+                                    maximum: 166
                         DropDownController:
                             #size_hint_y: 
                             name: 'Shape:'
@@ -553,17 +529,22 @@
                 BoxLayout:
                     BoxLayout:
                         orientation: 'vertical'                            
-                        DualController:
+                        BoxLayout:
                             orientation: 'vertical'
                             name: 'LFO 4 Freq'
                             nrpn: 52
                             HSlideController:
+                                nrpn: 52
+                                name: 'Freq'
                                 maximum: 150
-                                midirange: (0, 150)
                             DropDownController:
+                                nrpn: 52
                                 name: 'Time sync:'
-                                midirange: (151, 166)
                                 option_list: 'time_syncs'
+                                Option:
+                                    name: 'Freq'
+                                    minimum: 151
+                                    maximum: 166
                         DropDownController:
                             #size_hint_y: 
                             name: 'Shape:'

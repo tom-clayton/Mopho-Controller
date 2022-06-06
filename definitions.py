@@ -1,0 +1,2 @@
+
+SCREENS_DIR = 'screens'

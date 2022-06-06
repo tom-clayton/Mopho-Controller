@@ -1,0 +1,113 @@
+
+<MainScreen>
+    action_view: action_view
+    orientation: 'vertical'
+    ActionBar:
+        padding: '2sp'
+        pos: (0, 0)
+        size_hint_y: 0.05
+        ActionView:
+            id: action_view
+            ActionPrevious:
+                with_previous: False
+                title: "Synth Controller"
+            ActionButton:
+                text: 'Load'
+                on_release: root.on_load_button(*args)
+            ActionButton:
+                text: 'Save'
+                on_release: root.on_save_button(*args)
+            ActionButton:
+                text: 'Recieve'
+                on_release: root.on_receive_button(*args) 
+
+<SimpleDialogue>:
+    BoxLayout:
+        size: root.size
+        pos: root.pos
+        orientation: "vertical"
+        Label:
+            text: root.message
+        BoxLayout:
+            size_hint_y: None
+            height: 30
+            Button:
+                size_hint_y: None
+                height: 30
+                text: "OK"
+                on_release: root.cancel()
+
+<ConfirmDialogue>:
+    BoxLayout:
+        size: root.size
+        pos: root.pos
+        orientation: "vertical"
+        Label:
+            text: root.message
+        BoxLayout:
+            size_hint_y: None
+            height: 30
+            Button:
+                text: "Cancel"
+                on_release: root.cancel()
+            Button:
+                text: "Confirm"
+                on_release: root.confirm()
+            
+            
+<LoadDialogue>:
+    BoxLayout:
+        size: root.size
+        pos: root.pos
+        orientation: "vertical"
+        FileChooserListView:
+            id: filechooser
+            path: '.'
+        BoxLayout:
+            size_hint_y: None
+            height: 30
+            Button:
+                text: "Cancel"
+                on_release: root.cancel()
+            Button:
+                text: "Load"
+                on_release: root.load(root.synth, filechooser.selection[0])
+                
+<SaveDialogue>:
+    BoxLayout:
+        size: root.size
+        pos: root.pos
+        orientation: "vertical"
+        FileChooserListView:
+            id: filechooser
+            path: '.'
+            on_selection: text_input.text = self.selection and self.selection[0] or ''
+        TextInput:
+            text: filechooser.path + '/untitled.sysex'
+            id: text_input
+            size_hint_y: None
+            height: 30
+            multiline: False
+        BoxLayout:
+            size_hint_y: None
+            height: 30
+            Button:
+                text: "Cancel"
+                on_release: root.cancel()
+            Button:
+                text: "Save"
+                on_release: root.save(root.synth, text_input.text)
+
+<ChannelSelectionDialogue>
+    box: box
+    BoxLayout:
+        id: box
+        size: root.size
+        pos: root.pos
+        orientation: "vertical"
+        BoxLayout:
+            size_hint_y: None
+            height: 30
+            Button:
+                text: "Set"
+                on_release: root.on_confirm_button()

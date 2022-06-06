@@ -1,0 +1,9 @@
+{
+    "options": {
+        "destinations": [
+            "filter",
+            "lfo",
+            "vca"
+        ]
+    }
+}

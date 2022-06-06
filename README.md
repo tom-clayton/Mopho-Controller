@@ -1,12 +1,18 @@
 # Synth-Controller
-Touchscreen controller for a DSI Mopho Synth, and more...
 
-Runs on linux using Kivy.
+Universal touchscreen midi controller.
 
-Requires kivy and alsaseq.
+Sythn controller will allow midi control of up to 16 synths simulataneously.
 
-Most of the controls for the mopho are here, not the sequencer yet.
+Setups consist of screens of controllers. 
 
-The code unique to the mopho synth is now seprate, so the hopefully 
-the program could be made to work for other synths.
+Will contain a setup for a DSI Mopho as an example.
+
+Custom setups programmed with kivy's kv language, utilising any kivy widgets for layout.
+
+Custom setups can controll multiple synths in one page or even one controller.
+
+Will be able to load and save synth patches so can also be used as a librarian.
+
+Easily hackable to allow custom controllers
  

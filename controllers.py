@@ -22,126 +22,128 @@
 #  
 #  
 from kivy.properties import NumericProperty, StringProperty,\
-                            BooleanProperty, ObjectProperty,\
-                            BoundedNumericProperty, ListProperty
-                            #OptionProperty
+                            ObjectProperty, BoundedNumericProperty,\
+                            ListProperty, AliasProperty, BooleanProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.slider import Slider
 from kivy.uix.label import Label
 from kivy.uix.dropdown import DropDown
+from kivy.uix.widget import Widget
 from kivy.uix.togglebutton import ToggleButton
-from kivy.uix.behaviors import ToggleButtonBehavior
-#from kivy import factory
+from kivy.uix.behaviors.togglebutton import ToggleButtonBehavior
 from kivy.lang import Builder
 
 Builder.load_file('controllers.kv')
-
-all_controllers = [] 
 
 class BaseController(BoxLayout):
     """Controller base class
        
        A controller controls a parameter of the synth.
-       
-       If multiple controllers control the same parameter, one will be 
-       the main controller and the rest will be sub-controllers, only 
-       the main controller will send midi, a sub-controller must do it 
-       through the main controller.
-       
-       The nrpn is how it is referenced by the synth.
-       How it's value is displayed depends on its sub-class, i.e. slider.
-       
-       It's value is bounded by a minimum and a maximum.
-       
-       Offset is for when the value does not corespond to the value 
-       to be sent. i.e. a controller that can have a negative value.
-       
-       Controller objects are created by the kv file.
+       BaseController must be inherited by a controller sub-class.
+       Setup must be called once for every controller.
+       value is parameter value, midi value has offset added.
+       Bind to controller event 'on_send' to receive out-going midi-values
+       when controller value changes.
+       Set controller with midi value via 'set_without_sending_midi'
+       to avoid repeating midi.
+       Controller objects are created in the kv file.
        """ 
     
     # Default controller properties. Set by kv file if required:
-    name = StringProperty("")
-    nrpn = NumericProperty(0)
-    value = NumericProperty(0)
+    name = StringProperty('')       
+    synth = StringProperty(None)    
+    channel = NumericProperty(0)
+    nrpn = NumericProperty(None)
+    value = BoundedNumericProperty(0, min=0, max=127)
     minimum = NumericProperty(0)
     maximum = NumericProperty(127)
     offset = NumericProperty(0)
-    is_subcontroller = BooleanProperty(False)
-    display_function = ObjectProperty(lambda value: str(value))
-    
-    def __init__(self, **kwargs):
-        super(BaseController, self).__init__(**kwargs)
-        all_controllers.append(self)
-        self.bind(on_value=self.on_value)
+    linked = ListProperty([])
+    notes = BooleanProperty(False)
 
-    def setup(self):
-        """Called once at startup. 
-           Over-ridden by sub classes."""
+    def get_midi_value(self):
+        """get controller value with midi offset included"""
+        return self.value + self.offset
+    
+    def set_midi_value(self, value):
+        """set controller value if within correct range
+        will trigger on_midi_value callback"""
+        if self.midi_value == value:
+            self.locked = False
+            return
+        try:
+            self.value = value - self.offset
+            self.saved_value = self.value
+        except ValueError:
+            self.locked = False   
+        
+    midi_value = AliasProperty(get_midi_value, set_midi_value, bind=['value'])
+
+    def __init__(self, **kwargs):
+        self.register_event_type('on_send')
+        super(BaseController, self).__init__(**kwargs)
+        self.locked = False
+        self.link_locked = False
+        self.callback = None
+
+    def setup(self, *kwargs):
+        """Called once at startup,
+        set limits for value bounded property,    
+        call setup for subclasses."""
+        self.property('value').set_min(self, self.minimum)
+        self.property('value').set_max(self, self.maximum)
+        if self.value < self.minimum:
+            self.set_without_sending_midi(self.minimum + self.offset)
+        self.sub_setup()
+
+    def sub_setup(self, *kwargs):
+        """overridden by subclass"""
         pass
         
     def display_selected(self):
         """Called when contoller selection should be displayed to
            screen.
-           Over-ridden by sub classes."""
+           overridden by subcalss"""
         pass
     
-    def on_value(self, *args):
-        """Responds to a change in controller value.
-        
-           Checks for subcontroller.
-           Displays chosen value if approriate for controller.
-           Sends out value over midi.
-           """
-        if self.is_subcontroller:
-            self.parent.on_subcontroller_value(self)
-            return
-        
-        if isinstance(self, DualController):
-            self.on_dualcontroller_value()
-        
+    def set_without_sending_midi(self, value):
+        """change controller value without sending out a midi message
+        input should be raw midi value"""
+        self.locked = True
+        self.midi_value = value
         self.display_selected()
 
-        print("CC:", self)
+    def on_midi_value(self, instance, value):
+        """Respond to a change in controller value.
+           Display chosen value if approriate for controller.
+           Send out value over midi if change was due to ui.
+           """  
+        self.display_selected()
 
-        self.send_cc()
-
-        # Remember the prev value to check if value
-        # only changes by one, allowing the use of more efficient midi
-        # messaging available in some synths.
-        self.prev_value = self.value
-        
-    def send_cc(self):
-        """Sends out the contollers value over midi"""
-        self.midi.send_cc(self.nrpn, self.get_value())
-
-    def get_value(self):
-        """Gets controller's value with offset removed."""
-        return self.value - self.offset
-        
-    def set_value(self, value): 
-        """Sets controller's value."""
-        self.value = value + self.offset    
-    
-    def value_in_midirange(self, value):
-        """Checks if controllers value lies within
-           its allowed midi value range.
-           This is for sub-controllers, which only represent part of the
-           range of midi values of their parent dual-controller."""
-        
-        if self.midirange[0] <= value <= self.midirange[1]:
-            return True
+        if self.locked:
+            self.locked = False
         else:
-            return False
+            for linked in self.linked:
+                linked.set_without_sending_midi(self.midi_value)
+            self.dispatch('on_send', self.channel, self.nrpn, self.midi_value)
+
+    def on_send(self, *args):
+        pass
+        #print(self)
+
+    def add_callback(self, callback):
+        """add acallback for notifying value changes"""
+        self.callback = callback
             
-    def note(self, value):
+    def note(self):
         """Returns value as musical note."""
         notes = ('C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 
                  'A#', 'B')
-        return notes[value%12] + str(value//12)
+        return notes[self.value%12] + str(self.value//12)
     
     def __repr__(self):
-        return f"{type(self)}<{self.nrpn}>:{self.name} {self.value}"
+        return f"<{self.synth}>{type(self)}<{self.nrpn}>:{self.name} {self.value}"
 
 # Sub-classes for controller objects created in kv file:
 class SlideController(BaseController):
@@ -157,10 +159,9 @@ class ToggleController(BaseController):
     
        A binary type controller, switched on or off by a click/single 
        touch."""
+    button = ObjectProperty()
     def display_selected(self):
-        self.button = [c for c in self.children \
-                            if isinstance(c, Button)][0]
-                            
+        """display button state"""
         self.button.state = 'down' if self.value == 1 else 'normal' 
 
 class RadioController(BaseController):
@@ -168,100 +169,79 @@ class RadioController(BaseController):
     
        The controller made up of multiple radio buttons, where each 
        one represents a value or values of the controller."""
-    
-    def setup(self):
-        """Setup controller.
-        
-           Makes list of buttons.
-           Displays controller."""
-        self.buttons = [c for c in self.children \
-                            if isinstance(c, RadioButton)]
-        
+    group = StringProperty(None)
+    def add_buttons(self, buttons):
+        """keep reference to buttons."""
+        pass
+    def sub_setup(self):
+        self.buttons = ToggleButtonBehavior.get_widgets(self.group)
         for button in self.buttons:
-            if button.all_other_values is True:
-                self.all_other_values_btn = button
+            button.set_controller(self)
 
     def display_selected(self):
         """Displays which button is selected for controller."""
-            
         for button in self.buttons:
-            if not button.all_other_values and \
-                            self.value == button.value:
+            button.state = 'normal'
+            if button.value >= 0:
+                if self.midi_value == button.value:
+                    button.state = 'down'
+            elif button.minimum <= self.midi_value <= button.maximum:
                 button.state = 'down'
-            else:
-                button.state = 'normal'
-        
-        if self.is_subcontroller and \
-                    not self.value_in_midirange(self.value):
-            self.all_other_values_btn.state = 'down'
 
-class RadioButton(ToggleButton):
-    """A radio button.
-    
-       Only one radio button in a controller can be selected at any
-       time."""
-    def on_press(self):
-        """Radio button pressed.
-        
-           Sets value of radio-controller or runs other values button 
-           function in dual controller if it is such a button"""
-        if self.all_other_values:
-            self.parent.parent.on_all_other_values_option_selected()
-        else:
-            self.parent.value = self.value
+
             
 
-class TouchController(BaseController): # rename swipe
-    """A touch type controller.
+class SwipeController(BaseController): 
+    """A swipe type controller.
     
        The value is changed by a touch/click then draging up or down, or 
        mouse scrolling over controller"""
-       
-    def __init__(self, **kwargs):
-        super(TouchController, self).__init__(**kwargs)
-        self.bind(on_touch_down=self.on_down)       
-        self.bind(on_touch_move=self.on_move)
-        self.bind(on_touch_up=self.on_up)
+    text_label = ObjectProperty()
 
-    def on_down(self, wid, touch):
+    def _on_down(self, wid, touch):
         """Grabs touch event if click/touch is over controller."""
         if touch.x >= self.x and touch.x <= self.x + self.size[0] and\
            touch.y >= self.y and touch.y <= self.y + self.size[1]:
             # touch belongs to this controller, proceed
             touch.grab(self)
             if touch.is_mouse_scrolling:
-                if touch.button == 'scrolldown':
-                    self.value = self.bound_check(self.value + 1)
-                elif touch.button == 'scrollup':
-                    self.value = self.bound_check(self.value - 1)
+                try:
+                    if touch.button == 'scrolldown': 
+                        self.value += 1
+                    elif touch.button == 'scrollup':
+                        self.value -= 1
+                except ValueError:
+                    pass        
         
-    def on_move(self, wid, touch):
+    def _on_move(self, wid, touch):
         """Changes controllers value coresponding to move after click/touch."""
         if touch.grab_current is self:
-            self.value = self.bound_check(int(self.value + touch.dy))    
-
-    def on_up(self, wid, touch):
+            try:   
+                self.value = int(self.value + touch.dy)
+            except ValueError:
+                pass
+            
+    def _on_up(self, wid, touch):
         """Releases 'grab' of touch event on click/touch up."""
         if touch.grab_current is self:
             touch.ungrab(self)
-    
-    def bound_check(self, value):
-        """Makes sure value stays within bounds and returns it."""
-        if self.minimum <= value <= self.maximum:
-            return value
-        return self.maximum if value > self.maximum else self.minimum
+
+    def display_selected(self):
+        """displays controllers value"""
+        self.text_label.text = str(self.value)
 
 class DropDownController(BaseController):
     """A drop down type controller.
     
        The value is selected from a drop down list. """
     option_list = StringProperty('')
-    # always_on = BooleanProperty(False) # ??
+    options = ListProperty([])
     
-    def setup(self):
+    def sub_setup(self):
         """Creates the drop down list for the controller."""
         self.dropdown = DropDown()
-        self.options = self.synth.options[self.option_list]
+        self.extra_options = []
+        self._add_options_from_kivy()
         self.main_button = [widget for widget in self.children 
                        if isinstance(widget, Button)][0]
 
@@ -271,107 +251,92 @@ class DropDownController(BaseController):
             self.dropdown.add_widget(btn)
             
         self.main_button.bind(on_release=self.dropdown.open)
-        self.dropdown.bind(on_select=self.select_option)
+        self.dropdown.bind(on_select=self._select_option)
+        self.dropdown.bind(on_dismiss=self._on_dismiss)
 
-    def select_option(self, i, option):
+    def _on_dismiss(self, button):
+        """display selected option if dropdwon is dismissed"""
+        self.display_selected()
+
+    def _select_option(self, i, option):
         """Sets controller value to chosen option."""
-        self.value = self.options.index(option)
-    
-    # call display selected on dropdown close somehow
+        if option not in [o.name for o in self.extra_options]:
+            self.value = self.options.index(option)
+        else:
+            for extra_option in self.extra_options:
+                if option == extra_option.name:
+                    try:
+                        self.value = extra_option.value
+                    except AttributeError:
+                        try:
+                            self.value = self.saved_value
+                        except AttributeError:
+                            self.value = extra_option.minimum
+                        
+
+    def add_options(self, options):
+        """sets list of options on the dropdown"""
+        self.options = options
+
+    def _add_options_from_kivy(self):
+        """adds any extra options from kivy file"""
+        for child in self.children:
+            if type(child) == Option:
+                self.extra_options.append(child)
+                self.options.append(child.name)
         
     def display_selected(self):
         """Displays chosen option."""
-        if self.value >= 0:
-            try:
-                self.main_button.text = self.options[self.value]
-            except IndexError:
-                self.main_button.text = 'Off'
-        else:
-            self.main_button.text = 'Off'
-        
-        if self.main_button.text == 'Off':
-            self.main_button.state = 'normal'
-        else:
+        self.main_button.text = 'Off'
+        self.main_button.state = 'normal'
+
+        for option in self.extra_options:
+            if option.minimum <= self.value <= option.maximum:
+                self.main_button.text = option.name
+                self.main_button.state = 'down'
+                return
+        try:
+            self.main_button.text = self.options[self.value]
             self.main_button.state = 'down'
-        
-        
-class DualController(BaseController):
-    """A controller made up of two different types of controllers.
-       A list type controller (drop down, radio) and a numerical 
-       type controller (slider, swipe).
+        except IndexError:
+            pass
+
+class RadioButton(ToggleButton):
+    """A radio button.
     
-       The numeric type controller remembers its value when it is
-       de-activated with the list type controller."""
-       
-    def setup(self):
-        """Makes a list of sub-controllers.
-           Sets their sub-controller flag.
-           Sets list and numeric controller.
-           Carries out any sub-controller specific initialisations."""
-
-        self.subcontrollers = [c for c in self.children \
-                               if isinstance(c, BaseController)]
+       Only one radio button in a controller can be selected at any
+       time."""
+    group = StringProperty(None)
+    value = NumericProperty(-1)
+    minimum = NumericProperty(0)
+    maximum = NumericProperty(127)
         
-        for sub in self.subcontrollers:
-            sub.is_subcontroller = True
-            if type(sub) in [RadioController, DropDownController]:
-                self.list_controller = sub
-            elif isinstance(sub, SlideController) or \
-                    isinstance(sub, TouchController):
-                self.numeric_controller = sub
-                self.saved_numeric_value = sub.value
-            
-            sub.offset = sub.midirange[0]
-    
-    def on_subcontroller_value(self, subcontroller):
-        """Called when a sub-controller changes its value."""
-        #print("osv", subcontroller)
-        if subcontroller.value_in_midirange(subcontroller.value 
-                                            + subcontroller.offset):
-            if subcontroller is self.numeric_controller:
-                self.set_main_value_from_numeric_value()
-            elif subcontroller is self.list_controller:
-                self.set_main_value_from_list_value()
+    def set_controller(self, controller):
+        """keep reference to controller"""
+        self.controller = controller
 
-    def on_dualcontroller_value(self):
-        """Called when the dual-controller changes its value."""
-        #print("odv")
+    def on_press(self):
+        """Radio button pressed.
         
-        # only set num if num has changed (to 'save' num value)
-        if self.numeric_controller.value_in_midirange(self.value):
-            self.set_sub_value_from_main_value(self.numeric_controller)
+           Sets value of radiocontroller"""
+        if self.value >= 0:
+            self.controller.value = self.value
+        else:
+            try:
+                self.controller.value = self.controller.saved_value
+            except AttributeError:
+                self.controller.value = self.minimum
+        self.controller.display_selected()
 
-        # always set list (no saving nessesary)            
-        self.set_sub_value_from_main_value(self.list_controller)
-        
-    def display_selected(self):
-        """Display the selected button/option on the list controller."""
-        self.list_controller.display_selected()
+class Option(Widget):
+    """An option in a drop down menu."""
+    pass
 
-    def on_all_other_values_option_selected(self):
-        """Called when list button that represents numeric controller
-           values is pressed."""
-        self.numeric_controller.value = self.saved_numeric_value 
-        self.set_main_value_from_numeric_value()
-        self.display_selected()
+
+class TestController(BaseController):
+    """for testing purposes"""
+    pass
         
-    def set_main_value_from_numeric_value(self):
-        """Sets value of dual-controller from numeric subcontroller
-           value."""
-        self.value = self.numeric_controller.value \
-                        + self.numeric_controller.offset
-        self.saved_numeric_value = self.numeric_controller.value
-                        
-    def set_main_value_from_list_value(self):
-        """Sets value of dual-controller from list subcontroller
-           value."""
-        self.value = self.list_controller.value \
-                        + self.list_controller.offset 
-        self.display_selected()                 
-    
-    def set_sub_value_from_main_value(self, sub):
-        """Sets value of subcontroller from dual-controller value."""
-        sub.value = self.value - sub.offset
 
 
 def main(args):

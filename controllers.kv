@@ -17,7 +17,7 @@
         on_value: root.value = int(self.value)
     Label:
         #size_hint_x: 0.1
-        text: str(root.value)   
+        text: root.note() if root.notes else str(root.value)   
 
 <VSlideController@SlideController>
     orientation: 'vertical'
@@ -33,18 +33,23 @@
         on_value: root.value = int(self.value)
     Label:
         size_hint_y: 0.1
-        text: str(root.value)
+        text: root.note() if root.notes else str(root.value)
 
-<TouchController>           
+<SwipeController>           
     orientation: 'vertical'
-    on_value: self.display_function(self.value)
+    on_value: text_label.text = root.note() if root.notes else str(root.value)
+    on_touch_down: self._on_down(*args)
+    on_touch_move: self._on_move(*args)
+    on_touch_up: self._on_up(*args)
+    text_label: text_label
     Label:
         text: root.name
         text_size: self.size
         halign: 'center'
         valign: 'bottom'
     Label:
-        text: root.display_function(root.value)
+        id: text_label
+        text: str(root.value)
         text_size: self.size
         halign: 'center'
         valign: 'top'
@@ -57,13 +62,13 @@
         text: 'Off'
 
 <RadioButton>
-    group: self.parent.name
     allow_no_selection: False
-    all_other_values: False
     on_press: self.on_press()
 
 <ToggleController>
+    button: button
     ToggleButton:
+        id: button
         text: root.name
         on_press: root.value = 1 if self.state == 'down' else 0
    

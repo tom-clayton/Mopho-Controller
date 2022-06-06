@@ -1,0 +1,56 @@
+BoxLayout:
+    synth: 'test_synth'
+    orientation: 'vertical'
+    DropDownController:
+        nrpn: 5
+        option_list: 'destinations'
+        Option:
+            name: 'BPM'
+            minimum: 3
+            maximum: 53
+    SwipeController:
+        name: 'swipe'
+        nrpn: 5
+        offset: -97
+        minimum: 100
+        maximum: 150
+    HSlideController:
+        name: 'slide'
+        notes: True
+    
+    
+    RadioController:
+        group: 'g1'
+        nrpn: 2
+        BoxLayout:
+            orientation: 'vertical'
+            RadioButton:
+                text: '0'
+                value: 0
+            RadioButton:
+                text: '1'
+                value: 1
+            RadioButton:
+                text: '2'
+                value: 2
+            RadioButton:
+                text: '3'
+                value: 3
+            RadioButton:
+                text: '4-103'
+                minimum: 4
+                maximum: 103
+                
+    SwipeController:
+        nrpn: 2
+        minimum: 0
+        maximum: 99
+        offset: 4
+    TestController:
+        id: tester
+        Button:
+            on_press: tester.run_test()
+    
+
+    
+    
