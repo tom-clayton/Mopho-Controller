@@ -1,2 +1,0 @@
-
-SCREENS_DIR = 'screens'
