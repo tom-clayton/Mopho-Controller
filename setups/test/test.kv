@@ -6,8 +6,8 @@ BoxLayout:
         option_list: 'destinations'
         Option:
             name: 'BPM'
-            minimum: 3
-            maximum: 53
+            midi_minimum: 3
+            midi_maximum: 53
     SwipeController:
         name: 'swipe'
         nrpn: 5
@@ -17,6 +17,22 @@ BoxLayout:
     HSlideController:
         name: 'slide'
         notes: True
+
+    DropDownController:
+        list_offset: 51
+        nrpn: 6
+        option_list: 'destinations'
+        Option:
+            name: 'BPM'
+            midi_minimum: 0
+            midi_maximum: 50
+            
+    SwipeController:
+        name: 'swipe'
+        nrpn: 6
+        minimum: 100
+        maximum: 150
+        offset: -100
     
     
     RadioController:
@@ -26,20 +42,20 @@ BoxLayout:
             orientation: 'vertical'
             RadioButton:
                 text: '0'
-                value: 0
+                midi_value: 0
             RadioButton:
                 text: '1'
-                value: 1
+                midi_value: 1
             RadioButton:
                 text: '2'
-                value: 2
+                midi_value: 2
             RadioButton:
                 text: '3'
-                value: 3
+                midi_value: 3
             RadioButton:
                 text: '4-103'
-                minimum: 4
-                maximum: 103
+                midi_minimum: 4
+                midi_maximum: 103
                 
     SwipeController:
         nrpn: 2

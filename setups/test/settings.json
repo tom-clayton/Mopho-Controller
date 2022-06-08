@@ -1,6 +1,7 @@
 {
     "synth channels": {
-        "default": 0
+        "test_synth2": 2,
+        "test_synth": 1
     },
     "initial screen": "test"
-}    
+}

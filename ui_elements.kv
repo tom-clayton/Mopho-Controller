@@ -108,6 +108,15 @@
         BoxLayout:
             size_hint_y: None
             height: 30
+            orientation: "horizontal"
+            Label:
+                text: 'Synth'
+            Label:
+                text: 'Midi Channel'
+        BoxLayout:
+            size_hint_y: None
+            height: 30
             Button:
                 text: "Set"
                 on_release: root.on_confirm_button()
+

@@ -1,0 +1,572 @@
+
+# kivy rule, add to rules.kv file:
+<Module@BoxLayout>
+    padding: 5
+    active: False
+
+BoxLayout:
+    synth: 'mp'
+    orientation: 'vertical'
+
+    BoxLayout: # --- Row 1 --- #
+        size_hint_y: 0.2
+        
+        BoxLayout: # --- Mixer --- #
+            size_hint_x: 0.8
+            orientation: 'vertical'
+            
+            BoxLayout: # --- Oscilators --- #
+                size_hint_y: 0.8
+                
+                Module: # --- Osc 1 --- #
+                    BoxLayout:
+                        orientation: 'vertical'
+
+                        BoxLayout: # --- Shape --- #
+                            nrpn: 2 
+                            RadioController:
+                                size_hint_x: 0.8
+                                group: 'osc_shape_1'
+                                name: 'Osc 1 Shape'
+                                RadioButton:
+                                    text: 'Off'
+                                    value: 0
+                                RadioButton:
+                                    text: 'Saw'
+                                    value: 1
+                                RadioButton:
+                                    text: 'Tri'
+                                    value: 2
+                                RadioButton:
+                                    text: 'Saw/Tri'
+                                    value: 3
+                                RadioButton:
+                                    text: 'Pulse'
+                                    minimum: 4
+                                    maximum: 103
+                            SwipeController:
+                                size_hint_x: 0.2
+                                name: 'Width'
+                                offset: 4
+                                minimum: 0
+                                maximum: 99
+
+                        BoxLayout: # --- Freq --- #
+                            SwipeController:
+                                size_hint_x: 0.2
+                                name: 'Osc 1: Freq'
+                                nrpn: 0
+                                maximum: 120
+                                notes: True
+                            HSlideController:
+                                size_hint_x: 0.6
+                                name: 'Osc 1 Fine'
+                                nrpn: 1
+                                minimum: -50
+                                maximum: 50
+                                offset: 50
+                            BoxLayout:
+                                size_hint_x: 0.2
+                                orientation: 'vertical'
+                                ToggleController:
+                                    name: 'Keyboard'
+                                    nrpn: 4
+                                SwipeController:
+                                    name: 'Glide'
+                                    nrpn: 3
+                    VSlideController:
+                        size_hint_x: 0.2
+                        name: 'Sub Osc'
+                        nrpn: 114
+
+                Module: # --- Osc 2 --- #
+                    BoxLayout:
+                        orientation: 'vertical'
+                        BoxLayout: # --- Shape --- #
+                            nrpn: 7
+                            RadioController:
+                                size_hint_x: 0.8
+                                group: 'osc_shape_2'
+                                name: 'Osc 2 Shape'
+                                RadioButton:
+                                    text: 'Off'
+                                    value: 0
+                                RadioButton:
+                                    text: 'Saw'
+                                    value: 1
+                                RadioButton:
+                                    text: 'Tri'
+                                    value: 2
+                                RadioButton:
+                                    text: 'Saw/Tri'
+                                    value: 3
+                                RadioButton:
+                                    text: 'Pulse'
+                                    minimum: 4
+                                    maximum: 103  
+                            SwipeController:
+                                size_hint_x: 0.2
+                                name: 'Width'
+                                offset: 4
+                                minimum: 0
+                                maximum: 99
+                                
+                        BoxLayout: # --- Freq --- #
+                            SwipeController:
+                                size_hint_x: 0.2
+                                name: 'Osc 2: Freq'
+                                nrpn: 5
+                                maximum: 120
+                                notes: True
+                            HSlideController:
+                                size_hint_x: 0.6
+                                name: 'Osc 2 Fine'
+                                nrpn: 6
+                                minimum: -50
+                                maximum: 50
+                                offset: 50
+                            BoxLayout:
+                                size_hint_x: 0.2
+                                orientation: 'vertical'
+                                ToggleController:
+                                    name: 'Keyboard'
+                                    nrpn: 9
+                                SwipeController:
+                                    name: 'Glide'
+                                    nrpn: 8         
+                    VSlideController:
+                        size_hint_x: 0.2
+                        name: 'Sub Osc'
+                        nrpn: 115
+            HSlideController:
+                size_hint_y: 0.2
+                name: 'Osc Mix'
+                nrpn: 13
+        VSlideController:
+            size_hint_x: 0.05
+            name: 'Noise'
+            nrpn: 14 
+        BoxLayout: # --- Mixer misc --- #
+            size_hint_x: 0.15
+            orientation: 'vertical'        
+            DropDownController:
+                name: 'Glide:'
+                nrpn: 11
+                option_list: 'glide'
+            DropDownController:
+                name: 'Key Assign Priority:'
+                nrpn: 96
+                option_list: 'key_assign'
+
+            BoxLayout:
+                ToggleController:
+                    name: 'Sync'
+                    nrpn: 10
+                SwipeController:
+                    name: 'Slop'
+                    nrpn: 12
+                    maximum: 5
+                SwipeController:
+                    name: 'Bend'
+                    nrpn: 93
+                    maximum: 12
+                SwipeController:
+                    name: 'Input'
+                    nrpn: 116  
+
+    BoxLayout: # --- Row 2 --- #
+        size_hint_y: 0.3
+        
+        Module: # --- Filter --- #
+            BoxLayout:
+                size_hint_x: 0.2
+                orientation: 'vertical'
+                Label:
+                    size_hint_y: 0.1
+                    text: 'Filter'
+                Label:
+                    text: 'Poles'
+                RadioController:
+                    group: 'filter poles'
+                    name: 'filter poles'
+                    nrpn: 19
+                    RadioButton:
+                        text: '2'
+                        value: 0
+                    RadioButton:
+                        text: '4'
+                        value: 1
+                SwipeController:
+                    name: 'Keyboard'
+                    nrpn: 17
+                SwipeController:
+                    name: 'Audio Mod'
+                    nrpn: 18
+                SwipeController:
+                    name: 'Velocity'
+                    nrpn: 21        
+            VSlideController:
+                size_hint_x: 0.2
+                name: 'Cut Off'
+                nrpn: 15
+                maximum: 164
+            VSlideController:
+                size_hint_x: 0.2
+                name: 'Resonance'
+                nrpn: 16
+            BoxLayout:
+                orientation: 'vertical'
+                BoxLayout:
+                    VSlideController:
+                        name: 'Delay'
+                        nrpn: 22
+                    VSlideController:
+                        name: 'Attack'
+                        nrpn: 23
+                    VSlideController:
+                        name: 'Decay'
+                        nrpn: 24
+                    VSlideController:
+                        name: 'Sustain'
+                        nrpn: 25
+                    VSlideController:
+                        name: 'Release' 
+                        nrpn: 26
+                HSlideController:
+                    size_hint_y: 0.3 
+                    name: 'Envelope Amount' 
+                    nrpn: 20
+                    minimum: -127
+                    maximum: 127
+                    offset: 127
+
+        Module: #---------------VCA-----------------#
+            BoxLayout:
+                size_hint_x: 0.2
+                orientation: 'vertical'
+                Label:
+                    text: 'VCA'
+                SwipeController:
+                    name: 'Initial'
+                    nrpn: 27
+                SwipeController:
+                    name: 'Envelope'
+                    nrpn: 30        
+                SwipeController:
+                    name: 'Velocity'
+                    nrpn: 31
+                SwipeController:
+                    name: 'Volume'
+                    nrpn: 29
+            BoxLayout:
+                VSlideController:
+                    name: 'Delay'
+                    nrpn: 32
+                VSlideController:
+                    name: 'Attack'
+                    nrpn: 33
+                VSlideController:
+                    name: 'Decay'
+                    nrpn: 34
+                VSlideController:
+                    name: 'Sustain'
+                    nrpn: 35
+                VSlideController:
+                    name: 'Release'
+                    nrpn: 36
+
+    BoxLayout: # --- Row 3 --- #
+        size_hint_y: 0.5
+        
+        BoxLayout: # --- Column 1 --- #
+            orientation: 'vertical'
+            
+            Module: # --- Env 3 --- #
+                size_hint_y: 0.8
+                BoxLayout:
+                    size_hint_x: 0.2
+                    orientation: 'vertical'
+                    Label:
+                        text: 'Envelope 3'       
+                    SwipeController:
+                        name: 'Velocity'
+                        nrpn: 59
+                    ToggleController:
+                        name: 'Repeat'
+                        nrpn: 98
+                Module:
+                    orientation: 'vertical'
+                    active: False
+                    DropDownController:
+                        name: 'Envelope 3 Destination:'
+                        nrpn: 57
+                        option_list: 'destinations'
+                    BoxLayout:
+                        size_hint_y: 3.5
+                        VSlideController:
+                            name: 'Delay'
+                            nrpn: 60
+                        VSlideController:
+                            name: 'Attack'
+                            nrpn: 61
+                        VSlideController:
+                            name: 'Decay'
+                            nrpn: 62
+                        VSlideController:
+                            name: 'Sustain'
+                            nrpn: 63
+                        VSlideController:
+                            name: 'Release'
+                            nrpn: 64
+                    HSlideController:
+                        name: 'Envelope Amount' 
+                        nrpn: 58
+                        minimum: -127
+                        maximum: 127
+                        offset: 127
+                    
+            # Col 1 still:
+            BoxLayout:
+                size_hint_y: 0.5
+                Module: # --- Modulator 1 --- #
+                    orientation: 'vertical'
+                    DropDownController:
+                        size_hint_y: 0.5 
+                        name: 'Mod 1 Source:'
+                        nrpn: 65
+                        option_list: 'sources'
+                    HSlideController:
+                        name: 'Amount'
+                        nrpn: 66 
+                        minimum: -127
+                        maximum: 127
+                        offset: 127
+                    DropDownController:
+                        size_hint_y: 0.5 
+                        name: 'Destination:'
+                        nrpn: 67
+                        option_list: 'destinations'
+                Module: # --- Modulator 2 --- #
+                    orientation: 'vertical'
+                    DropDownController:
+                        size_hint_y: 0.5 
+                        name: 'Mod 2 Source:'
+                        nrpn: 68
+                        option_list: 'sources'
+                    HSlideController:
+                        name: 'Amount'
+                        nrpn: 69 
+                        minimum: -127
+                        maximum: 127
+                        offset: 127
+                    DropDownController:
+                        size_hint_y: 0.5 
+                        name: 'Destination:'
+                        nrpn: 70
+                        option_list: 'destinations'
+                Module: # --- Modulator 3 --- #
+                    orientation: 'vertical'
+                    DropDownController:
+                        size_hint_y: 0.5 
+                        name: 'Mod 3 Source:'
+                        nrpn: 71
+                        option_list: 'sources'
+                    HSlideController:
+                        name: 'Amount'
+                        nrpn: 72
+                        minimum: -127
+                        maximum: 127
+                        offset: 127
+                    DropDownController:
+                        size_hint_y: 0.5 
+                        name: 'Destination:'
+                        nrpn: 73
+                        option_list: 'destinations'
+                Module: # --- Modulator 4 --- #
+                    orientation: 'vertical'
+                    DropDownController:
+                        size_hint_y: 0.5 
+                        name: 'Mod 4 Source:'
+                        nrpn: 74
+                        option_list: 'sources'
+                    HSlideController:
+                        name: 'Amount'
+                        nrpn: 75
+                        minimum: -127
+                        maximum: 127
+                        offset: 127
+                    DropDownController:
+                        size_hint_y: 0.5 
+                        name: 'Destination:'
+                        nrpn: 76
+                        option_list: 'destinations'
+
+
+        BoxLayout: # --- Column 1 --- #
+            GridLayout: # --- LFOs --- #
+                rows: 2
+                cols: 2
+                
+                Module: # --- LFO 1 --- #
+                    orientation: 'vertical'
+                    DropDownController:
+                        size_hint_y: 0.3 
+                        name: 'LFO 1 Destination:'
+                        nrpn: 40
+                        option_list: 'destinations'
+                    BoxLayout:
+                        BoxLayout:
+                            orientation: 'vertical'                            
+                            DropDownController:
+                                size_hint_y: 0.4
+                                name: 'Shape:'
+                                nrpn: 38
+                                option_list: 'lfo_shapes'
+                            DropDownController:
+                                size_hint_y: 0.4
+                                nrpn: 37
+                                minimum: -151
+                                offset: 151
+                                name: 'Time sync:'
+                                option_list: 'time_syncs'
+                                Option:
+                                    name: 'Un-synced'
+                                    minimum: -151
+                                    maximum: -1
+                            ToggleController:
+                                size_hint_y: 0.2
+                                name: 'Key Sync'
+                                nrpn: 41
+                        VSlideController:
+                            name: 'Freq'
+                            nrpn: 37
+                            maximum: 150
+                        VSlideController:
+                            name: 'Amount'
+                            nrpn: 39
+                            
+                Module: # --- LFO 2 --- #
+                    orientation: 'vertical'
+                    DropDownController:
+                        size_hint_y: 0.3 
+                        name: 'LFO 2 Destination:'
+                        nrpn: 45
+                        option_list: 'destinations'
+                    BoxLayout:
+                        BoxLayout:
+                            #shape, time, key, time, amount
+                            #43, 42, 46, 42, 44
+                            orientation: 'vertical'
+                            DropDownController:
+                                size_hint_y: 0.4
+                                name: 'Shape:'
+                                nrpn: 43
+                                option_list: 'lfo_shapes'
+                            DropDownController:
+                                size_hint_y: 0.4
+                                nrpn: 42
+                                minimum: -151
+                                offset: 151
+                                name: 'Time sync:'
+                                option_list: 'time_syncs'
+                                Option:
+                                    name: 'Un-synced'
+                                    minimum: -151
+                                    maximum: -1
+                            ToggleController:
+                                size_hint_y: 0.2
+                                name: 'Key Sync'
+                                nrpn: 46
+                        VSlideController:
+                            name: 'Freq'
+                            nrpn: 42
+                            maximum: 150
+                        VSlideController:
+                            name: 'Amount'
+                            nrpn: 44
+
+                Module: # --- LFO 3 --- #
+                    orientation: 'vertical'
+                    DropDownController:
+                        size_hint_y: 0.3
+                        name: 'LFO 3 Destination:'
+                        nrpn: 50
+                        option_list: 'destinations'
+                    BoxLayout:
+                        BoxLayout:
+                            #shape, time, key, time, amount
+                            #48, 47, 51, 47, 49
+                            orientation: 'vertical'
+                            DropDownController:
+                                size_hint_y: 0.4
+                                name: 'Shape:'
+                                nrpn: 48
+                                option_list: 'lfo_shapes'
+                            DropDownController:
+                                size_hint_y: 0.4
+                                nrpn: 47
+                                minimum: -151
+                                offset: 151
+                                name: 'Time sync:'
+                                option_list: 'time_syncs'
+                                Option:
+                                    name: 'Un-synced'
+                                    minimum: -151
+                                    maximum: -1
+                            ToggleController:
+                                size_hint_y: 0.2
+                                name: 'Key Sync'
+                                nrpn: 51
+                        VSlideController:
+                            name: 'Freq'
+                            nrpn: 47
+                            maximum: 150
+                        VSlideController:
+                            name: 'Amount'
+                            nrpn: 49
+
+                Module: # --- LFO 4 --- #
+                    orientation: 'vertical'
+                    DropDownController:
+                        size_hint_y: 0.3
+                        name: 'LFO 4 Destination:'
+                        nrpn: 55
+                        option_list: 'destinations'
+                    BoxLayout:
+                        BoxLayout:
+                            #shape, time, key, time, amount
+                            #53, 52, 56, 52, 54
+                            orientation: 'vertical'
+                            DropDownController:
+                                size_hint_y: 0.4
+                                name: 'Shape:'
+                                nrpn: 53
+                                option_list: 'lfo_shapes'
+                            DropDownController:
+                                size_hint_y: 0.4
+                                nrpn: 52
+                                minimum: -151
+                                offset: 151
+                                name: 'Time sync:'
+                                option_list: 'time_syncs'
+                                Option:
+                                    name: 'Un-synced'
+                                    minimum: -151
+                                    maximum: -1
+                            ToggleController:
+                                size_hint_y: 0.2
+                                name: 'Key Sync'
+                                nrpn: 56
+                        VSlideController:
+                            name: 'Freq'
+                            nrpn: 52
+                            maximum: 150
+                        VSlideController:
+                            name: 'Amount'
+                            nrpn: 54
+                            
+##    TestController:
+##        size_hint_y: 0.1
+##        id: tester
+##        Button:
+##            on_press: tester.run_test()

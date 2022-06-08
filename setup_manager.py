@@ -26,7 +26,6 @@ class SetupManager(object):
         """check if intial setup found, use first setup found if not,
         raise error if no setups found."""
         setups = self.setups
-        print(setups)
         if self.initial_setup in setups:
             self.setup_dir = os.path.join(self.setups_dir, self.initial_setup)
         elif setups:
@@ -36,28 +35,39 @@ class SetupManager(object):
 
     def _load_setup_settings(self):
         """load the settings for the current setup"""
-        self.channels = None
-        self.initial_screen = None
         try:
             with open(os.path.join(self.setup_dir, "settings.json")) as fo:
-                settings = json.load(fo)
-                self._channels = settings['synth channels']
-                self.initial_screen = settings['initial screen']
+                self.setup_settings = json.load(fo)
         except FileNotFoundError:
-            pass
+            self.setup_settings = {
+                                'initial screen': None,
+                                'synth channels': {},
+                            }
 
     def _save_setup_settings(self):
         """save the settings for the current setup"""
-        pass
+        with open(os.path.join(self.setup_dir, "settings.json"), "w") as fo:
+            json.dump(self.setup_settings, fo, indent=4)
 
     @property
     def channels(self):
-        return self._channels
+        return self.setup_settings['synth channels']
 
     @channels.setter
     def channels(self, value):
         """set synth channels and save settings"""
-        self._channels = value
+        # check for multiple values
+        self.setup_settings['synth channels'] = value
+        self._save_setup_settings()
+
+    @property
+    def initial_screen(self):
+        return self.setup_settings['initial screen']
+
+    @initial_screen.setter
+    def initial_screen(self, value):
+        """set synth channels and save settings"""
+        self.setup_settings['initial screen'] = value
         self._save_setup_settings()
 
     @property

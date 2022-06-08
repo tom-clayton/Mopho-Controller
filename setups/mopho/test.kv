@@ -1,0 +1,32 @@
+
+BoxLayout:
+    synth: 'mp'
+    BoxLayout:
+        orientation: 'vertical'                            
+        DropDownController:
+            size_hint_y: 0.4
+            name: 'Shape:'
+            nrpn: 38
+            option_list: 'lfo_shapes'
+        DropDownController:
+            size_hint_y: 0.4
+            nrpn: 37
+            minimum: -151
+            offset: 151
+            name: 'Time sync:'
+            option_list: 'time_syncs'
+            Option:
+                name: 'Un-synced'
+                minimum: -151
+                maximum: -1
+        ToggleController:
+            size_hint_y: 0.2
+            name: 'Key Sync'
+            nrpn: 41
+    VSlideController:
+        name: 'Freq'
+        nrpn: 37
+        maximum: 150
+    VSlideController:
+        name: 'Amount'
+        nrpn: 39

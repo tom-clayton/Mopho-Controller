@@ -1,0 +1,7 @@
+{
+    "initial screen": "mp",
+    "synth channels": {
+        "mp": 1,
+        "default": 1
+    }
+}

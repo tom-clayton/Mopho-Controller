@@ -1,26 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-#
-#  controllers.py
-#  
-#  Copyright 2020 tom clayton <clayton_tom@yahoo.com>
-#  
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  (at your option) any later version.
-#  
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#  
-#  You should have received a copy of the GNU General Public License
-#  along with this program; if not, write to the Free Software
-#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-#  MA 02110-1301, USA.
-#  
-#  
+
 from kivy.properties import NumericProperty, StringProperty,\
                             ObjectProperty, BoundedNumericProperty,\
                             ListProperty, AliasProperty, BooleanProperty
@@ -35,6 +13,8 @@ from kivy.uix.behaviors.togglebutton import ToggleButtonBehavior
 from kivy.lang import Builder
 
 Builder.load_file('controllers.kv')
+
+SWIPE_SPEED = 0.75
 
 class BaseController(BoxLayout):
     """Controller base class
@@ -62,11 +42,11 @@ class BaseController(BoxLayout):
     linked = ListProperty([])
     notes = BooleanProperty(False)
 
-    def get_midi_value(self):
+    def _get_midi_value(self):
         """get controller value with midi offset included"""
         return self.value + self.offset
     
-    def set_midi_value(self, value):
+    def _set_midi_value(self, value):
         """set controller value if within correct range
         will trigger on_midi_value callback"""
         if self.midi_value == value:
@@ -74,11 +54,10 @@ class BaseController(BoxLayout):
             return
         try:
             self.value = value - self.offset
-            self.saved_value = self.value
         except ValueError:
             self.locked = False   
         
-    midi_value = AliasProperty(get_midi_value, set_midi_value, bind=['value'])
+    midi_value = AliasProperty(_get_midi_value, _set_midi_value, bind=['value'])
 
     def __init__(self, **kwargs):
         self.register_event_type('on_send')
@@ -87,15 +66,16 @@ class BaseController(BoxLayout):
         self.link_locked = False
         self.callback = None
 
-    def setup(self, *kwargs):
+    def setup(self, **kwargs):
         """Called once at startup,
         set limits for value bounded property,    
         call setup for subclasses."""
         self.property('value').set_min(self, self.minimum)
         self.property('value').set_max(self, self.maximum)
-        if self.value < self.minimum:
-            self.set_without_sending_midi(self.minimum + self.offset)
+        #if self.value < self.minimum:
+        #    self.set_without_sending_midi(self.minimum + self.offset)
         self.sub_setup()
+        self.set_without_sending_midi(0)
 
     def sub_setup(self, *kwargs):
         """overridden by subclass"""
@@ -107,36 +87,33 @@ class BaseController(BoxLayout):
            overridden by subcalss"""
         pass
     
-    def set_without_sending_midi(self, value):
+    def set_without_sending_midi(self, midi_value):
         """change controller value without sending out a midi message
         input should be raw midi value"""
         self.locked = True
-        self.midi_value = value
-        self.display_selected()
+        self.midi_value = midi_value
 
     def on_midi_value(self, instance, value):
         """Respond to a change in controller value.
            Display chosen value if approriate for controller.
            Send out value over midi if change was due to ui.
-           """  
+           """
+        self.value = self.midi_value - self.offset
         self.display_selected()
 
         if self.locked:
             self.locked = False
-        else:
+        elif self.nrpn:
             for linked in self.linked:
                 linked.set_without_sending_midi(self.midi_value)
             self.dispatch('on_send', self.channel, self.nrpn, self.midi_value)
+            
 
     def on_send(self, *args):
         pass
         #print(self)
-
-    def add_callback(self, callback):
-        """add acallback for notifying value changes"""
-        self.callback = callback
             
-    def note(self):
+    def _note(self):
         """Returns value as musical note."""
         notes = ('C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 
                  'A#', 'B')
@@ -182,13 +159,39 @@ class RadioController(BaseController):
         """Displays which button is selected for controller."""
         for button in self.buttons:
             button.state = 'normal'
-            if button.value >= 0:
-                if self.midi_value == button.value:
+            if button.value:
+                if self.value == button.value:
                     button.state = 'down'
-            elif button.minimum <= self.midi_value <= button.maximum:
+            elif button.minimum <= self.value <= button.maximum:
                 button.state = 'down'
+                button.saved_value = self.value
 
+class RadioButton(ToggleButton):
+    """A radio button.
+    
+       Only one radio button in a controller can be selected at any
+       time."""
+    group = StringProperty(None)
+    value = NumericProperty(None)
+    #minimum = NumericProperty(0)
+    #maximum = NumericProperty(127)
+        
+    def set_controller(self, controller):
+        """keep reference to controller"""
+        self.controller = controller
 
+    def on_press(self):
+        """Radio button pressed.
+        
+           Sets value of radiocontroller"""
+        if self.value:
+            self.controller.value = self.value
+        else:
+            try:
+                self.controller.value = self.saved_value
+            except AttributeError:
+                self.controller.value = self.minimum
+        self.controller.display_selected()
             
 
 class SwipeController(BaseController): 
@@ -197,6 +200,7 @@ class SwipeController(BaseController):
        The value is changed by a touch/click then draging up or down, or 
        mouse scrolling over controller"""
     text_label = ObjectProperty()
+
 
     def _on_down(self, wid, touch):
         """Grabs touch event if click/touch is over controller."""
@@ -217,7 +221,7 @@ class SwipeController(BaseController):
         """Changes controllers value coresponding to move after click/touch."""
         if touch.grab_current is self:
             try:   
-                self.value = int(self.value + touch.dy)
+                self.value = int(self.value + touch.dy*SWIPE_SPEED)
             except ValueError:
                 pass
             
@@ -236,6 +240,7 @@ class DropDownController(BaseController):
        The value is selected from a drop down list. """
     option_list = StringProperty('')
     options = ListProperty([])
+    grey_on_zero = BooleanProperty(False)
     
     def sub_setup(self):
         """Creates the drop down list for the controller."""
@@ -265,11 +270,11 @@ class DropDownController(BaseController):
         else:
             for extra_option in self.extra_options:
                 if option == extra_option.name:
-                    try:
+                    if extra_option.value:
                         self.value = extra_option.value
-                    except AttributeError:
+                    else:
                         try:
-                            self.value = self.saved_value
+                            self.value = extra_option.saved_value
                         except AttributeError:
                             self.value = extra_option.minimum
                         
@@ -290,58 +295,34 @@ class DropDownController(BaseController):
         self.main_button.text = 'Off'
         self.main_button.state = 'normal'
 
-        for option in self.extra_options:
-            if option.minimum <= self.value <= option.maximum:
-                self.main_button.text = option.name
-                self.main_button.state = 'down'
-                return
-        try:
+        list_options = len(self.options) - len(self.extra_options)
+        if list_options and 0 <= self.value < list_options:
             self.main_button.text = self.options[self.value]
             self.main_button.state = 'down'
-        except IndexError:
-            pass
-
-class RadioButton(ToggleButton):
-    """A radio button.
-    
-       Only one radio button in a controller can be selected at any
-       time."""
-    group = StringProperty(None)
-    value = NumericProperty(-1)
-    minimum = NumericProperty(0)
-    maximum = NumericProperty(127)
-        
-    def set_controller(self, controller):
-        """keep reference to controller"""
-        self.controller = controller
-
-    def on_press(self):
-        """Radio button pressed.
-        
-           Sets value of radiocontroller"""
-        if self.value >= 0:
-            self.controller.value = self.value
         else:
-            try:
-                self.controller.value = self.controller.saved_value
-            except AttributeError:
-                self.controller.value = self.minimum
-        self.controller.display_selected()
+            for option in self.extra_options:
+                if option.value:
+                    if self.value == option.value:
+                        self.main_button.text = option.name
+                        self.main_button.state = 'down'
+                        break
+                elif option.minimum <= self.value <= option.maximum:
+                    self.main_button.text = option.name
+                    self.main_button.state = 'down'
+                    option.saved_value = self.value
+                    break
+
+        if self.main_button.text == 'Off'\
+          or (self.grey_on_zero and not self.value):
+            self.main_button.state = 'normal'   
+
+
 
 class Option(Widget):
+    value = NumericProperty(None)
     """An option in a drop down menu."""
     pass
-
 
 class TestController(BaseController):
     """for testing purposes"""
     pass
-        
-
-
-def main(args):
-    return 0
-
-if __name__ == '__main__':
-    import sys
-    sys.exit(main(sys.argv))

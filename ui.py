@@ -4,8 +4,11 @@ from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.popup import Popup
 from kivy.uix.actionbar import ActionBar, ActionButton
 from kivy.uix.label import Label
+from kivy.uix.spinner import Spinner
 from kivy.properties import ObjectProperty, StringProperty
 from kivy.lang import Builder
+
+from controllers import SwipeController
 
 Builder.load_file('ui_elements.kv')
 
@@ -20,7 +23,7 @@ class MainScreen(BoxLayout):
         self.register_event_type('on_load_confirmed')
         self.register_event_type('on_save_confirmed')
         self.register_event_type('on_channel_selection')
-        self.screens = {'no_screens_label': Label(text='No screens')}
+        self.screens = {'no_screens_label': Label(text='No initial screen set')}
         self.current_screen = 'no_screens_label'
         self.add_widget(self.screens['no_screens_label']) 
 
@@ -51,10 +54,11 @@ class MainScreen(BoxLayout):
 
     def set_screen(self, screen):
         """set the current screen"""
-        self.remove_widget(self.screens[self.current_screen])
-        self.add_widget(self.screens[screen])
-        self.current_screen = screen
-        self._set_tab_states()    
+        if screen:
+            self.remove_widget(self.screens[self.current_screen])
+            self.add_widget(self.screens[screen])
+            self.current_screen = screen
+            self._set_tab_states()
             
     def _set_tab_states(self):
         """set state of tabs"""
@@ -129,10 +133,11 @@ class MainScreen(BoxLayout):
         
         self.confirm_popup.open()
 
-    def channel_selection_popup(self):
+    def channel_selection_popup(self, channels):
         """create a dialogue to select midi channels for each synth"""
         content = ChannelSelectionDialogue(
-            confirm=lambda channels: self.dispatch('on_channel_selection', data),
+            channels,
+            confirm=lambda channels: self.dispatch('on_channel_selection', channels),
             cancel=lambda: self.confirm_popup.dismiss()
         )
         self.popup = Popup(
@@ -186,24 +191,32 @@ class ConfirmDialogue(FloatLayout):
     cancel = ObjectProperty()
 
 class ChannelSelectionDialogue(FloatLayout):
+    confirm = ObjectProperty()
+    cancel = ObjectProperty()
     box = ObjectProperty()
-    def __init__(self, synths, **kwargs):
+    def __init__(self, channels, **kwargs):
         """fill dialogue with spinner for each synth"""
         super(ChannelSelectionDialogue, self).__init__(**kwargs)
-        self.spinners = {}
-        for synth in synths:
+        self.swipes = {}
+        for synth in channels:
             row = BoxLayout(orientation='horizontal')
             row.add_widget(Label(text=synth))
-            spinner = Spinner(values=[str(x+1) for x in range(16)])
-            row.add_widget(spinner)
-            self.spinners[synth] = spinner
-            self.box.add_widget(row)
+            swipe = SwipeController()
+            swipe.property('value').set_min(swipe, 1)
+            swipe.property('value').set_max(swipe, 16)
+            if channels[synth]:
+                swipe.value = channels[synth]
+            else:
+                swipe.value = 1
+            row.add_widget(swipe)
+            self.swipes[synth] = swipe
+            self.box.add_widget(row, 1)
 
     def on_confirm_button(self):
         """create dict of results, send to confirm lambda"""
         channels = {}
-        for synth in self.spinners:
-            channels[synth] = self.spinners[synth]
+        for synth in self.swipes:
+            channels[synth] = self.swipes[synth].value
         self.confirm(channels)
-    
-    
+        print(channels)
+

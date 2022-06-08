@@ -3,26 +3,22 @@ from controllers import BaseController, RadioController,\
                         RadioButton, TestController,\
                         DropDownController
 
-import os
 
 class ControllerManager(object):
     """Manages controllers"""
 
-    def __init__(self, main_app, screens): # replace reference to main app with
-        # relevenat objects???
+    def __init__(self, main_app, screens):
         """retain reference to main app functions for actioning user input
         and getting option_lists.
         walk screens widget trees and keep reference of all controllers.""" 
-        #self.main_app = main_app
         self.midi_send = main_app.on_ui_cc
         self.test_func = main_app.run_test
-        #self.get_option_list = main_app.get_option_list
         self.screens = screens
         self.controllers = []
         for screen in self.screens.values():
+            print(screen)
             self._walk_tree(screen, self._collect_controllers)
-        self._propigate_properties(self)
-
+        self._propigate_properties()
 
     def _propigate_properties(self):
         """propigate synth and nrpn properties to all widget's children
@@ -45,16 +41,22 @@ class ControllerManager(object):
 
     @property
     def synths(self):
-        return [c.synth for c in self.controllers]
+        """return a list of synths controlled by controllers""" 
+        return list(set([c.synth for c in self.controllers]))
+
+    def add_synth_data(self, synths):
+        """add a dict of data for synths, None as value if no data
+        available for synth"""
+        self.synth_data = synths
 
     def set_channels(self, channels):
         """set channel for each controller acding to its synth as set in
         'channels' dict"""
-        pass
+        for controller in self.controllers:
+            controller.channel = channels[controller.synth]
     
-    def initialise_controllers(self, channels):
+    def initialise_controllers(self):
         """for all controllers:
-        set_channel,
         link controllers with same nrpn,
         bind with midi object,
         add buttons to radio controllers,
@@ -64,7 +66,6 @@ class ControllerManager(object):
         print(len(self.controllers))
         
         for controller in self.controllers:
-            controller.channel = channels[controller.synth]
             
             # link controllers:
             self._link_controllers(controller)
@@ -85,11 +86,15 @@ class ControllerManager(object):
                         )
 
             # set DropDownControllers options:
-            #if type(controller) == DropDownController:
-            #    controller.add_options(self.main_app.get_option_list(
-            #                                        controller.synth,
-            #                                        controller.option_list
-            #                                    ))
+            if type(controller) == DropDownController:
+                try:
+                    controller.add_options(
+                            self.synth_data[controller.synth]\
+                                .data['options'][controller.option_list]
+                        )
+                except (AttributeError, KeyError):
+                    pass
+                    # log screen error
             # run controller setup and display current value:
             controller.setup()
             controller.display_selected()
@@ -126,9 +131,9 @@ class ControllerManager(object):
         except KeyError:
             new_value = value
            
-        if isinstance(widget, w_type) and value != new_value:
+        if isinstance(widget, w_type) and new_value:
             widget.property(prop).set(widget, new_value)
-
+        #print(widget, value, new_value)
         return new_value
     
     def _link_controllers(self, con_i):
