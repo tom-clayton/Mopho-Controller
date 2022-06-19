@@ -1,7 +1,7 @@
 {
-    "initial screen": "mp",
+    "initial screen": "main",
     "synth channels": {
-        "mp": 1,
+        "mopho": 1,
         "default": 1
     }
 }
