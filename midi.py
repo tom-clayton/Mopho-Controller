@@ -1,27 +1,58 @@
 
-import rtmidi_python as rtmidi
+from alsa_midi import SequencerClient
+from alsa_midi import EventType
+
+import threading
+
+STATUS_BIT      = 0x80
 
 MSG_CC          = 0xb0
-MSG_SYSEX_START = 0xf0
+MSG_SYSEX       = 0xf0
 MSG_SYSEX_END   = 0xf7
 MSG_NRPN_MSB    = 0x63
-MSG_NRPN_MSB    = 0x62
+MSG_NRPN_LSB    = 0x62
 MSG_VAL_MSB     = 0x06
-MSG_VAL_MSB     = 0x26
-
+MSG_VAL_LSB     = 0x26
 
 class Midi(object):
-    def __init__(self, port=0, cc_callback, sysex_callback):
+    def __init__(self, cc_callback=None, sysex_callback=None):
         """Set up midi interface"""
-        self.midi_out = rtmidi.MidiOut()
-        self.midi_out.open_port(port)
-
-        self.midi_in = rtmidi.MidiIn()
-        self.midi_in.callback = self._on_midi
-        self.midi_in.open_port(port)
+        self.setup()
 
         self.cc_callback = cc_callback
         self.sysex_callback = sysex_callback
+        
+        self.message_data = bytearray()
+        
+        input_thread = threading.Thread(
+            target=self.poll, 
+            daemon=True
+        )
+        input_thread.start()
+    
+    def setup(self):
+        """setup alsa midi"""
+        self.client = SequencerClient("Synth Controller")
+        self.port = self.client.create_port("inout")
+        
+    def poll(self):
+        """poll midii for input"""
+        print ("thread started")
+        while True:
+            event = self.client.event_input()
+            if event.type == EventType.CONTROLLER:
+                self.parse_cc(event)
+     
+    def parse_cc(self, event):
+        """parce a control change midi message"""
+        if event.param not in (
+            MSG_NRPN_MSB, 
+            MSG_NRPN_LSB, 
+            MSG_VAL_MSB,
+            MSG_VAL_LSB
+        ):
+            pass
+            
         
     def send_cc(self, channel, controller, value):
         """send a control change midi midi_data for given values"""
@@ -44,17 +75,30 @@ class Midi(object):
         msg.extend(MSG_SYSEX_END)
         midi_out.send_message(msg)
 
-    def _on_midi(message, time_stamp):
+    def _on_midi(self, data, _):
         """parse status byte and deal with midi messsage"""
-        print (message, time_stamp)
+        message = data[0]
+        print(message)
+        return
+        message_type = message[0] & 0xf0
+        
+    
+        
+        if message & STATUS_BIT:
+            self.message = []
 
         # parse status byte:
         message_type = message[0] & 0xf0
+        if message_type in [MSG_CC, MSG_SYSEX]:
+            self.messa
+            
 
-        if message_type == MSG_CC:  
-            self._receive_cc(message)
+        if message_type == MSG_CC:
+            print("cc")  
+            #self._receive_cc(message)
         elif message_type == MSG_SYSEX:
-            self._receive_sysex(message)
+            print("sysex")
+            #self._receive_sysex(message)
 
     def _receive_cc(data):
         """receive a control change message"""

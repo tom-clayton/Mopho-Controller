@@ -143,11 +143,11 @@ class ControllerManager(object):
                 and con_i.nrpn == con_j.nrpn:
                     con_i.linked.append(con_j)
         
-    def set_controller_value(self, synth, nrpn, value):
+    def set_controller_value(self, channel, nrpn, value):
         """sets value on given controller"""
-        print(f"incoming: {synth} {nrpn} {value}")
+        print(f"incoming: {channel} {nrpn} {value}")
         for controller in self.controllers:
-            if controller.synth == synth and controller.nrpn == nrpn:
+            if controller.channel == channel and controller.nrpn == nrpn:
                 controller.set_without_sending_midi(value)
 
     def set_controller_values(self, synth, nrpn_order, data):
