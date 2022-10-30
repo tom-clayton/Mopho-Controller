@@ -7,18 +7,14 @@ from controllers import BaseController, RadioController,\
 class ControllerManager(object):
     """Manages controllers"""
 
-    def __init__(self, main_app, screens):
-        """retain reference to main app functions for actioning user input
-        and getting option_lists.
-        walk screens widget trees and keep reference of all controllers.""" 
-        self.midi_send = main_app.on_ui_cc
-        self.test_func = main_app.run_test
+    def __init__(self, screens):
+        """walk screens widget trees and keep reference of all controllers.""" 
         self.screens = screens
         self.controllers = []
         for screen in self.screens.values():
             print(screen)
             self._walk_tree(screen, self._collect_controllers)
-        self._propigate_properties()
+        self._propigate_properties()      
 
     def _propigate_properties(self):
         """propigate synth and nrpn properties to all widget's children
@@ -44,63 +40,69 @@ class ControllerManager(object):
         """return a list of synths controlled by controllers""" 
         return list(set([c.synth for c in self.controllers]))
 
-    def add_synth_data(self, synths):
-        """add a dict of data for synths, None as value if no data
-        available for synth"""
-        self.synth_data = synths
-
     def set_channels(self, channels):
         """set channel for each controller acding to its synth as set in
         'channels' dict"""
         for controller in self.controllers:
             controller.channel = channels[controller.synth]
     
-    def initialise_controllers(self):
-        """for all controllers:
+    def initialise_controllers(
+            self,
+            options_lists,
+            midi_send_func,
+            load_confirm_func
+        ):
+        """for midi controllers:
         link controllers with same nrpn,
-        bind with midi object,
+        bind with midi send function,
         add buttons to radio controllers,
         add options to dropdown controllers,
         display selected option for each controller.
-        return list of synths found."""
+        return list of synths found.
+        for utility controllers:
+        bind to utility functions"""
         print(len(self.controllers))
         
         for controller in self.controllers:
-            
-            # link controllers:
-            self._link_controllers(controller)
-            
-            # bind midi send
-            controller.bind(
-                on_send=lambda _, channel, nrpn, value:\
-                            self.midi_send(channel, nrpn, value)
-            )
-            # set RadioButtons groups:
-            if isinstance(controller, RadioController):
-                self._walk_tree(
-                            controller,
-                            self._set_property_if_type,
-                            controller.group,
-                            'group',
-                            RadioButton,
-                        )
+            if isinstance(controller, BaseController):
+                # link controllers:
+                self._link_controllers(controller)
+                
+                # bind midi send
+                controller.bind(
+                    on_send=lambda _, channel, nrpn, value:\
+                                midi_send_func(channel, nrpn, value)
+                )
+                
+                # set RadioButtons groups:
+                if isinstance(controller, RadioController):
+                    self._walk_tree(
+                                controller,
+                                self._set_property_if_type,
+                                controller.group,
+                                'group',
+                                RadioButton,
+                            )
 
-            # set DropDownControllers options:
-            if type(controller) == DropDownController:
-                try:
-                    controller.add_options(
-                            self.synth_data[controller.synth]\
-                                .data['options'][controller.option_list]
+                # set DropDownControllers options:
+                if type(controller) == DropDownController:
+                    try:
+                        controller.add_options(
+                            options_lists[controller.synth][controller.option_list]
                         )
-                except (AttributeError, KeyError):
-                    pass
-                    # log screen error
-            # run controller setup and display current value:
-            controller.setup()
-            controller.display_selected()
+                    except (AttributeError, KeyError):
+                        pass
+                        # log screen error
+                        
+                # run controller setup and display current value:
+                controller.setup()
+                controller.display_selected()
 
-            if type(controller) == TestController:
-                controller.run_test = self.test_func
+            else: # UtilityController
+                controller.bind(
+                    on_load_unconfirmed=lambda _, data: load_confirm_func(data)
+                )
+
 
     def _walk_tree(self, widget, func, value=None, *args):
         """traverse widget tree branch from 'widget' onwards, calling 'func'

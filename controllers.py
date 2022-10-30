@@ -60,7 +60,7 @@ class BaseController(BoxLayout):
     midi_value = AliasProperty(_get_midi_value, _set_midi_value, bind=['value'])
 
     def __init__(self, **kwargs):
-        self.register_event_type('on_send')
+        self.register_event_type('on_send') 
         super(BaseController, self).__init__(**kwargs)
         self.locked = False
         self.link_locked = False
@@ -323,6 +323,27 @@ class Option(Widget):
     """An option in a drop down menu."""
     pass
 
-class TestController(BaseController):
-    """for testing purposes"""
-    pass
+class UtilityController(BoxLayout):
+    """One shot button controller for non-midi actions"""
+    def __init__(self, **kwargs):
+        """Register events"""
+        super(UtilityController, self).__init__(**kwargs)
+        self.register_event_type('on_load_unconfirmed')
+        
+    def load_patch(self):
+        """Dispatch load event."""
+        self.dispatch('on_load_unconfirmed')
+        
+    def save_patch(self):
+        pass
+    def send_patch(self):
+        pass
+    def receive_patch(self):
+        pass
+
+    def load_and_send_patch(self):
+        pass
+    
+        
+        
+

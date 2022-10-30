@@ -18,8 +18,6 @@ class MainScreen(BoxLayout):
     def __init__(self, **kwargs):
         """setup screen"""
         super(MainScreen, self).__init__(**kwargs)
-        self.register_event_type('on_load_unconfirmed')
-        self.register_event_type('on_save_unconfirmed')
         self.register_event_type('on_load_confirmed')
         self.register_event_type('on_save_confirmed')
         self.register_event_type('on_channel_selection')
@@ -147,6 +145,7 @@ class MainScreen(BoxLayout):
                 )
         
         self.popup.open()
+
   
 
     def on_load_unconfirmed(self, *args):
