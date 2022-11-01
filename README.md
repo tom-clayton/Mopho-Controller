@@ -2,17 +2,31 @@
 
 Universal touchscreen midi controller.
 
-Sythn controller will allow midi control of up to 16 synths simulataneously.
+Midi control of hardware synths, soft-synths and midi controlled effects.
 
-Setups consist of screens of controllers. 
+Synth Controller runs one 'Setup' at a time.
 
-Will contain a setup for a DSI Mopho as an example.
+Setups consist of one or more screens of controllers, activated with tabs in an action bar. 
 
-Custom setups programmed with kivy's kv language, utilising any kivy widgets for layout.
+A Setup for a DSI Mopho is provided as an example, more will follow.
 
-Custom setups can controll multiple synths in one page or even one controller.
+Setups can control up to 16 midi devices in one page simultaneously.
 
-Will be able to load and save synth patches so can also be used as a librarian.
+Each controller can control one or more midi paramters, even from different synths. And one parameter can be contolled by multiple controllers.
 
-Easily hackable to allow custom controllers
+Various types of controllers exist:
+
+    - Horizontal and vertical slide controllers.
+    - Swipe controllers.
+    - Toggle buttons.
+    - Radio buttons.
+    - Dropdown option lists.
+
+Utiliy controllers allow loading, saving, sending and receiving synth patches so it also be used as a patch librarian.
+
+Custom setups can be made easily with kivy's kv language, utilising any kivy widgets for layout.
+
+Completely hackable to allow custom controllers and synths with unique features/options.
+
+
  

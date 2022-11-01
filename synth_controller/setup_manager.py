@@ -5,14 +5,18 @@ import json
 SETUPS_DIR = 'setups'
 
 class SetupManager(object):
-    """Manage the different user setups available"""
-    def __init__(self):
+    """Manage the different user setups and their settings"""
+    def __init__(self, ui):
+        self.ui = ui
+        self.controller_manager = controller_manager
         self.setups_dir = os.path.join(os.getcwd(), SETUPS_DIR)
         self._load_main_settings()
         self._confirm_setup()
         self._load_setup_settings()
 
-    def _load_main_settings(self):
+        self.ui.bind(on_channel_selection=self.on_channel_selection)
+
+    def _load_main_settings(self): 
         """load settings from current directory"""
         self.initial_setup = None
         try:
@@ -49,16 +53,41 @@ class SetupManager(object):
         with open(os.path.join(self.setup_dir, "settings.json"), "w") as fo:
             json.dump(self.setup_settings, fo, indent=4)
 
+
+    def build_screens(self):
+        """Build the screens found in the setup in th ui.
+        Set the initial screen"""
+        self.ui.build_screens(self.screens)
+        self.ui.set_screen(self.initial_screen)
+
+    def assign_channels(self):
+        """Check if all controlled synths have a midi channel assigned in
+        settings.
+        Run midi channel selction if not.
+        assign channels in controllers."""
+        synth_missing = False
+        channels = {}
+        for synth in self.controller_manager.synths:
+            if synth not in self.setup_settings['synth channels']:
+                channels[synth] = None
+                synth_missing = True
+            else:
+                channels[synth] = self.setup_settings['synth channels'][synth]
+
+        if synth_missing:
+            self.ui.channel_selection_popup(channels)
+        else:
+            self.setup_settings['synth channels'] = channels
+
+    def on_channel_selection(self, _, channels): 
+        """Set the channels dict as requested in the channel selection popup.
+        Assign channels in controllers"""
+        self.setup_settings['synth channels'] = channels
+        self._save_setup_settings()
+
     @property
     def channels(self):
         return self.setup_settings['synth channels']
-
-    @channels.setter
-    def channels(self, value):
-        """set synth channels and save settings"""
-        # check for multiple values
-        self.setup_settings['synth channels'] = value
-        self._save_setup_settings()
 
     @property
     def initial_screen(self):

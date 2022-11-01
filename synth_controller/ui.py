@@ -18,9 +18,12 @@ class MainScreen(BoxLayout):
     def __init__(self, **kwargs):
         """setup screen"""
         super(MainScreen, self).__init__(**kwargs)
+        
+        # Register events dispatched by popups:
         self.register_event_type('on_load_confirmed')
         self.register_event_type('on_save_confirmed')
         self.register_event_type('on_channel_selection')
+        
         self.screens = {'no_screens_label': Label(text='No initial screen set')}
         self.current_screen = 'no_screens_label'
         self.add_widget(self.screens['no_screens_label']) 
