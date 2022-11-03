@@ -20,13 +20,9 @@
 
 # See mopho's json file for an example.
 
-FUNCTIONS = {
-    'mopho_unpack': mopho_unpack,
-    }
-
 def mopho_unpack(data):
-    """Unpack midi patch dump data into tuple of parameter values
-    as ints. Packing format from page 44 of Manual"""
+    """Unpack midi patch dump data into tuple of parameter values as ints.
+    Packing format from page 44 of Manual"""
     unpacked_data = []
 
     for i in range(0, len(data), 8):
@@ -34,10 +30,33 @@ def mopho_unpack(data):
         packing_byte = chunk[0]
         mask = 0x01
         for byte in chunk[1:]:
-            if (packing_byte & mask):
-                unpacked_data.append(0x80 + byte)
-            else:
-                unpacked_data.append(byte)
-            mask = mask << 1
+            unpacked_data.append(((packing_byte & mask) << 7) | byte)
+            mask <<= 1
 
     return tuple(unpacked_data)
+
+def mopho_pack(data):
+    """Pack midi patch dump data from tuple of parameter values as ints.
+    Packing format from page 44 of Manual"""
+    packed_data = []
+
+    for i in range(0, len(data), 7):
+        chunk = data[i: i+7]
+        packing_byte = 0x0
+        data_bytes = []
+        shift = 0x7
+        for byte in chunk:
+            packing_byte |= ((byte & 0x80) >> shift)
+            shift -= 1
+            data_bytes.append(byte & 0x7f)
+            
+        packed_data.append(packing_byte)
+        packed_data.extend(data_bytes)
+
+    return tuple(packed_data)
+    
+
+FUNCTIONS = {
+    'mopho_unpack': mopho_unpack,
+    'mopho_pack': mopho_pack,
+}

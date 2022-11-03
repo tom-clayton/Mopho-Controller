@@ -4,6 +4,7 @@ from setup_manager import SetupManager, NoSetupException
 from controller_manager import ControllerManager
 from synth_manager import SynthManager
 from midi import Midi
+from error_handler import ErrorHandler
 from patch_manager import PatchManager
 from strings import *
 
@@ -31,7 +32,7 @@ class MainApp(App):
             print("no setup")
             sys.exit(1)
 
-        # init screens
+        # get screens
         screens = self.setup_manager.build_screens()
 
         # init controller manager
@@ -41,71 +42,44 @@ class MainApp(App):
         self.synth_manager = SynthManager(self.controller_manager.synths)
 
         # init midi interface
-        self.midi = Midi(self.on_incoming_cc, self.on_incoming_sysex)
+        self.midi = Midi()
+
+        # init error handler
+        self.error_handler = ErrorHandler()
 
         # init patch manager
         self.patch_manager = PatchManager(
                                 self.midi,
                                 self.ui,
                                 self.controller_manager,
-                                self.synth_data,
-                                self.on_no_patch_details_error
-                            ) 
+                                self.synth_manager,
+                                self.error_handler
+                            )
+
+        # set midi callbacks
+        self.midi.set_callbacks(
+            self.controller_manager.set_controller_value,
+            patch_manager.parse_sysex
+        )
 
     def build(self):
         """build the kivy app"""
         return self.ui
 
     def on_start(self):
-        """check if synths have a midi channel registered in settings file.
-        initialise controllers with synth options lists and
-        callbacks to bind to controller events.
+        """Initialise controllers with synth options lists and midi and patch
+        objects for callbacks to bind to controller events.
         Assign and set midi channels.""" 
         self.controller_manager.initialise_controllers(
-            self.synth_manager.options_lists
-            self.midi.send_nrpn,
-            self.patch_manager.on_load_unconfirmed
+            self.synth_manager.options_lists,
+            self.midi,
+            self.patch_manager
         )
         
-        self.setup_manager.assign_channels()
+        self.setup_manager.assign_channels(self.controller_manager.synths)
         self.controller_manager.set_channels(self.setup_manager.channels)
 
-        #self.ui.simple_popup("Welcome", "Synth Controller")
-
-    # midi callbacks #    
-    def on_incoming_cc(self, channel, nrpn, value):
-        """Set and display controller value from incoming midi"""
-        self.controller_manager.set_controller_value(channel, nrpn, value)
-        
-    def on_incoming_sysex(self, message):
-        """Parse incoming sysex message"""
-        patch_manager.parse_sysex(message)
-
-
-    # functions to be moved to patch_manager class: #
-    def _on_save_unconfirmed(self, _, data):
-        """open a confirm popup to confirm patch save if file alreadey exists
-    else save file"""
-        synth, filename = data
-        if not patch_manager.check_synth(synth):
-            print(NO_PATCH_ABILITY)
-        if os.path.exists(filename):
-            self.ui.confirm_popup(CONFIRM_SAVE, 'on_save_confirmed', data)
-        else:
-            patch_manager.save_patch(synth, filename)
-        
-    def _on_save(self, _, data):
-        """get nrpn values in dump order for given synth, save to file"""
-        synth, filename = data
-        print("save", synth, filename)
-        return
-        save_data = self.controller_manager.get_controller_values(
-                                        synth,
-                                        self.synths[synth].nrpn_order
-                                    )
-        
-        with open(filename, "wb") as fo:
-            fo.write(bytes(save_data))
+        #self.ui.simple_popup(WELCOME_TITLE, WELCOME_MESSAGE)
 
 
 def main():

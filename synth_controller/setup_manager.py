@@ -8,7 +8,6 @@ class SetupManager(object):
     """Manage the different user setups and their settings"""
     def __init__(self, ui):
         self.ui = ui
-        self.controller_manager = controller_manager
         self.setups_dir = os.path.join(os.getcwd(), SETUPS_DIR)
         self._load_main_settings()
         self._confirm_setup()
@@ -48,6 +47,14 @@ class SetupManager(object):
                                 'synth channels': {},
                             }
 
+    def _load_screens(self):
+        """Create a dict of kv files in current setup directory, with name
+        without directory or extension as key and full filename as value."""
+        self.screens = {}
+        for filename in [f for f in os.listdir(self.setup_dir) \
+                          if f[-3:] == '.kv']:
+            self.screens[filename[:-3]] = os.path.join(self.setup_dir, filename)       
+
     def _save_setup_settings(self):
         """save the settings for the current setup"""
         with open(os.path.join(self.setup_dir, "settings.json"), "w") as fo:
@@ -55,19 +62,19 @@ class SetupManager(object):
 
 
     def build_screens(self):
-        """Build the screens found in the setup in th ui.
+        """Build the screens found in the setup into the ui.
         Set the initial screen"""
+        self._load_screens()
         self.ui.build_screens(self.screens)
         self.ui.set_screen(self.initial_screen)
 
-    def assign_channels(self):
+    def assign_channels(self, synths):
         """Check if all controlled synths have a midi channel assigned in
         settings.
-        Run midi channel selction if not.
-        assign channels in controllers."""
+        Run midi channel selction if not."""
         synth_missing = False
         channels = {}
-        for synth in self.controller_manager.synths:
+        for synth in synths:
             if synth not in self.setup_settings['synth channels']:
                 channels[synth] = None
                 synth_missing = True
@@ -98,16 +105,6 @@ class SetupManager(object):
         """set synth channels and save settings"""
         self.setup_settings['initial screen'] = value
         self._save_setup_settings()
-
-    @property
-    def screens(self):
-        """return a dict of kv files in current setup directory, with name
-        without directory or extension as key and full filename as value."""
-        output = {}
-        for filename in [f for f in os.listdir(self.setup_dir) \
-                          if f[-3:] == '.kv']:
-            output[filename[:-3]] = os.path.join(self.setup_dir, filename)    
-        return output
     
     @property
     def setups(self):

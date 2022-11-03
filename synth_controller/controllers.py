@@ -328,18 +328,26 @@ class UtilityController(BoxLayout):
     def __init__(self, **kwargs):
         """Register events"""
         super(UtilityController, self).__init__(**kwargs)
-        self.register_event_type('on_load_unconfirmed')
+        self.register_event_type('on_load')
+        self.register_event_type('on_save')
+        self.register_event_type('on_send')
+        self.register_event_type('on_receive')
         
     def load_patch(self):
         """Dispatch load event."""
-        self.dispatch('on_load_unconfirmed')
+        self.dispatch('on_load')
         
     def save_patch(self):
-        pass
+        """Dispatch save event."""
+        self.dispatch('on_save')
+        
     def send_patch(self):
-        pass
+        """Dispatch save event."""
+        self.dispatch('on_send')
+        
     def receive_patch(self):
-        pass
+        """Dispatch save event."""
+        self.dispatch('on_receive')
 
     def load_and_send_patch(self):
         pass

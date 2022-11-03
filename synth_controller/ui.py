@@ -13,14 +13,16 @@ from controllers import SwipeController
 Builder.load_file('ui_elements.kv')
 
 class MainScreen(BoxLayout):
-    """The main screen, manages all ui related actions bar controllers"""
+    """The main kivy screen and popups"""
     action_view = ObjectProperty()
     def __init__(self, **kwargs):
         """setup screen"""
         super(MainScreen, self).__init__(**kwargs)
         
-        # Register events dispatched by popups:
+        # Register ui events dispatched by popups:
+        self.register_event_type('on_load_unconfirmed')
         self.register_event_type('on_load_confirmed')
+        self.register_event_type('on_save_unconfirmed')
         self.register_event_type('on_save_confirmed')
         self.register_event_type('on_channel_selection')
         
@@ -83,13 +85,12 @@ class MainScreen(BoxLayout):
         
         self.popup.open()
         
-    def _on_load_button(self, instance):
+    def load_dialogue(self, synth):
         """create load dialogue popup"""
-        synth = 'placholder'
         content = LoadDialogue(
                     synth=synth,
                     load=lambda synth, filename:\
-                    self.dispatch('on_load_unconfirmed', (synth, filename)),
+                    self.dispatch('on_load_unconfirmed', synth, filename),
                     cancel=lambda: self.popup.dismiss()
                 )
         self.popup = Popup(
@@ -100,13 +101,12 @@ class MainScreen(BoxLayout):
         
         self.popup.open()
 
-    def _on_save_button(self, instance):
+    def save_dialogue(self, synth):
         """create save dialogue popup"""
-        synth = 'placholder'
         content = SaveDialogue(
                     synth=synth,
                     save=lambda synth, filename:\
-                    self.dispatch('on_save_unconfirmed', (synth, filename)),
+                    self.dispatch('on_save_unconfirmed', synth, filename),
                     cancel=lambda: self.popup.dismiss()
                 )
         self.popup = Popup(

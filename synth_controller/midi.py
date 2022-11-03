@@ -11,25 +11,21 @@ MSG_VALUE_MSB     = 0x06
 MSG_VALUE_LSB     = 0x26
 
 class Midi(object):
-    def __init__(
-            self, 
-            cc_callback=None, 
-            sysex_callback=None, 
-            connection=None
-        ):
+    def __init__(self, connection=None):
         """Set up midi interface"""
         self._setup(connection)
-
-        self.cc_callback = cc_callback
-        self.sysex_callback = sysex_callback
-
-        self._create_data()
+        self._create_data_array()
         
         input_thread = threading.Thread(
             target=self._poll, 
             daemon=True
         )
         input_thread.start()
+
+    def set_callbacks(self, cc_callback=None, sysex_callback=None,):
+        """Set the midi in callbacks"""
+        self.cc_callback = cc_callback
+        self.sysex_callback = sysex_callback
     
     def _setup(self, connection):
         """setup alsa midi"""
@@ -39,7 +35,7 @@ class Midi(object):
             # connect to port
             pass
 
-    def _create_data(self):
+    def _create_data_array(self):
         """create empty received message data arrays"""
         self.sysex_data = b''
         self.nrpn_data = [i for i in range(16)]

@@ -12,7 +12,6 @@ class ControllerManager(object):
         self.screens = screens
         self.controllers = []
         for screen in self.screens.values():
-            print(screen)
             self._walk_tree(screen, self._collect_controllers)
         self._propigate_properties()      
 
@@ -41,7 +40,7 @@ class ControllerManager(object):
         return list(set([c.synth for c in self.controllers]))
 
     def set_channels(self, channels):
-        """set channel for each controller acding to its synth as set in
+        """set channel for each controller according to its synth as set in
         'channels' dict"""
         for controller in self.controllers:
             controller.channel = channels[controller.synth]
@@ -49,32 +48,29 @@ class ControllerManager(object):
     def initialise_controllers(
             self,
             options_lists,
-            midi_send_func,
-            load_confirm_func
+            midi,
+            patch_manager
         ):
         """for midi controllers:
         link controllers with same nrpn,
         bind with midi send function,
-        add buttons to radio controllers,
+        connect radio controller groups,
         add options to dropdown controllers,
         display selected option for each controller.
         return list of synths found.
+
         for utility controllers:
         bind to utility functions"""
         print(len(self.controllers))
         
         for controller in self.controllers:
             if isinstance(controller, BaseController):
-                # link controllers:
                 self._link_controllers(controller)
-                
-                # bind midi send
                 controller.bind(
                     on_send=lambda _, channel, nrpn, value:\
-                                midi_send_func(channel, nrpn, value)
+                                midi.send_nrpn(channel, nrpn, value)
                 )
                 
-                # set RadioButtons groups:
                 if isinstance(controller, RadioController):
                     self._walk_tree(
                                 controller,
@@ -84,7 +80,6 @@ class ControllerManager(object):
                                 RadioButton,
                             )
 
-                # set DropDownControllers options:
                 if type(controller) == DropDownController:
                     try:
                         controller.add_options(
@@ -94,25 +89,33 @@ class ControllerManager(object):
                         pass
                         # log screen error
                         
-                # run controller setup and display current value:
                 controller.setup()
                 controller.display_selected()
 
             else: # UtilityController
                 controller.bind(
-                    on_load_unconfirmed=lambda _, data: load_confirm_func(data)
+                    on_load=lambda _, data: patch_manager.on_load(synth)
+                )
+                controller.bind(
+                    on_save=lambda _, data: patch_manager.on_save(synth)
+                )
+                controller.bind(
+                    on_send=lambda _, data: patch_manager.on_send(synth)
+                )
+                controller.bind(
+                    on_receive=lambda _, data: patch_manager.on_receive(synth)
                 )
 
 
     def _walk_tree(self, widget, func, value=None, *args):
         """traverse widget tree branch from 'widget' onwards, calling 'func'
-    on each widget"""
+    and updating value on each widget"""
         value = func(widget, value, *args)
         for child in widget.children:
             self._walk_tree(child, func, value, *args)
 
     def _collect_controllers(self, widget, _):
-        """add object to reference list if is of correct type"""
+        """add controller to list if is one"""
         if isinstance(widget, BaseController):
             self.controllers.append(widget)
 
@@ -156,7 +159,7 @@ class ControllerManager(object):
         """set each byte in data to corresponding nrpn in nrpn_order if it
         is of given synth"""
         for i, byte in enumerate(data):
-            self.set_controller_value(synth, nrpns[i], byte)
+            self.set_controller_value(synth, nrpn_order[i], byte)
 
     def get_controller_values(self, synth, nrpn_order):
         """return all controller values for synth in order given
@@ -169,7 +172,7 @@ class ControllerManager(object):
         return tuple(output)
 
     def send_all(self, synth):
-        """send value for every controller for given synth"""
+        """send midi for every controller for given synth"""
         for controller in [c for c in self.controllers if c.synth == synth]:
             controller.send_value()
 
