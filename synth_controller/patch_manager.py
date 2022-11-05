@@ -18,8 +18,8 @@ class PatchManager(object):
         """Store references to objects or relevent functions from objects"""
         self.send_sysex = midi.send_sysex
         self.ui = ui
-        self.get_conntroller_values = controller_manager.get_controller_values
-        self.set_conntroller_values = controller_manager.set_controller_values
+        self.get_controller_values = controller_manager.get_controller_values
+        self.set_controller_values = controller_manager.set_controller_values
         self.synth_manager = synth_manager
         self.error_handler = error_handler
 
@@ -33,7 +33,7 @@ class PatchManager(object):
         if self.synth_manager.is_patchable(synth):
             return true
         else:
-            self.error_handler.error_message('NO_PATCH_DETAILS', synth)
+            self.error_handler.error('NO_PATCH_DETAILS', synth)
 
     def on_load(self, synth):
         """Open a load dialogue in the ui"""
@@ -57,12 +57,12 @@ class PatchManager(object):
         try:
             unpacked_data = self.synth_manager.unpack(synth, data[1:-1])
             self.set_controller_values(
-                            synth,
+                            self.synth_manager.get_channel(synth),
                             self.synth_manager.get_order(synth),
                             unpacked_data
                         )
         except IncorrectSynthError:
-            self.error_handler.error_message('INCORRECT_SYNTH', synth)    
+            self.error_handler.error('INCORRECT_SYNTH', synth)    
         
 
     def on_save(self, synth):
@@ -72,7 +72,7 @@ class PatchManager(object):
         # from scratch
         if self._check_synth(synth):
             self.ui.save_dialogue(synth)
-                                    )
+            
     def on_save_unconfirmed(self, synth, filename):
         """Confirm the save in the ui"""
         if os.path.exists(filename):
@@ -104,22 +104,25 @@ class PatchManager(object):
                                 )
         packed_data = self.synth_manager.pack(synth, patch_data)
 
-        message = b'0xf0'
+        message = b'\xf0'
         message += self.synth_manager.get_header(synth)
         message += packed_data
-        message += b'0xf7'
+        message += b'\xf7'
         self.send_sysex(message)
 
     def on_receive(self, synth):
         """Send request patch sysex message to synth"""
-        message = self.synth_manager.get_request(synth)
-        self.send_sysex(b'0xf0' + message + b'0xf7')
+        if self.synth_manager.is_patchable(synth):
+            message = self.synth_manager.get_request(synth)
+            self.send_sysex(b'\xf0' + message + b'\xf7')
+        else:
+            self.error_handler.error('NO_PATCH_DETAILS', synth)
 
     def parse_sysex(self, message):
         """Find out which synth incoming sysex message is for.
         apply patch if possible"""
         synth = self.synth_manager.find_synth(message[1:-1])
         if synth:
-            self._apply_patch(synth, message[1:-1])
+            self._apply_patch(synth, message)
             
         

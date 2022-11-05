@@ -3,7 +3,7 @@ from ui import MainScreen
 from setup_manager import SetupManager, NoSetupException
 from controller_manager import ControllerManager
 from synth_manager import SynthManager
-from midi import Midi
+from midi_test import Midi
 from error_handler import ErrorHandler
 from patch_manager import PatchManager
 from strings import *
@@ -32,11 +32,11 @@ class MainApp(App):
             print("no setup")
             sys.exit(1)
 
-        # get screens
-        screens = self.setup_manager.build_screens()
+        # build screens
+        self.setup_manager.build_screens()
 
         # init controller manager
-        self.controller_manager = ControllerManager(screens)                                      screens
+        self.controller_manager = ControllerManager(self.ui.screens)
 
         # init synth manager
         self.synth_manager = SynthManager(self.controller_manager.synths)
@@ -59,7 +59,7 @@ class MainApp(App):
         # set midi callbacks
         self.midi.set_callbacks(
             self.controller_manager.set_controller_value,
-            patch_manager.parse_sysex
+            self.patch_manager.parse_sysex
         )
 
     def build(self):
@@ -78,6 +78,7 @@ class MainApp(App):
         
         self.setup_manager.assign_channels(self.controller_manager.synths)
         self.controller_manager.set_channels(self.setup_manager.channels)
+        self.synth_manager.set_channels(self.setup_manager.channels)
 
         #self.ui.simple_popup(WELCOME_TITLE, WELCOME_MESSAGE)
 

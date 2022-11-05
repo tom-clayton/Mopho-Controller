@@ -50,10 +50,7 @@ class SetupManager(object):
     def _load_screens(self):
         """Create a dict of kv files in current setup directory, with name
         without directory or extension as key and full filename as value."""
-        self.screens = {}
-        for filename in [f for f in os.listdir(self.setup_dir) \
-                          if f[-3:] == '.kv']:
-            self.screens[filename[:-3]] = os.path.join(self.setup_dir, filename)       
+               
 
     def _save_setup_settings(self):
         """save the settings for the current setup"""
@@ -64,8 +61,12 @@ class SetupManager(object):
     def build_screens(self):
         """Build the screens found in the setup into the ui.
         Set the initial screen"""
+        kv_files = {}
+        for filename in [f for f in os.listdir(self.setup_dir) \
+                          if f[-3:] == '.kv']:
+            kv_files[filename[:-3]] = os.path.join(self.setup_dir, filename)
         self._load_screens()
-        self.ui.build_screens(self.screens)
+        self.ui.build_screens(kv_files)
         self.ui.set_screen(self.initial_screen)
 
     def assign_channels(self, synths):

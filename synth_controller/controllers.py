@@ -316,8 +316,6 @@ class DropDownController(BaseController):
           or (self.grey_on_zero and not self.value):
             self.main_button.state = 'normal'   
 
-
-
 class Option(Widget):
     value = NumericProperty(None)
     """An option in a drop down menu."""
@@ -325,6 +323,9 @@ class Option(Widget):
 
 class UtilityController(BoxLayout):
     """One shot button controller for non-midi actions"""
+    synth = StringProperty(None)
+    channel = NumericProperty(0)
+    
     def __init__(self, **kwargs):
         """Register events"""
         super(UtilityController, self).__init__(**kwargs)
@@ -335,21 +336,30 @@ class UtilityController(BoxLayout):
         
     def load_patch(self):
         """Dispatch load event."""
-        self.dispatch('on_load')
+        self.dispatch('on_load', self.synth)
         
     def save_patch(self):
         """Dispatch save event."""
-        self.dispatch('on_save')
+        self.dispatch('on_save', self.synth)
         
     def send_patch(self):
         """Dispatch save event."""
-        self.dispatch('on_send')
+        self.dispatch('on_send', self.synth)
         
     def receive_patch(self):
         """Dispatch save event."""
-        self.dispatch('on_receive')
+        self.dispatch('on_receive', self.synth)
 
     def load_and_send_patch(self):
+        pass
+
+    def on_load(self, _):
+        pass
+    def on_save(self, _):
+        pass
+    def on_send(self, _):
+        pass
+    def on_receive(self, _):
         pass
     
         

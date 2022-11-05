@@ -35,8 +35,7 @@ class MainScreen(BoxLayout):
         kv files. fill action bar and return the dict"""
         for screen in filenames:
             self.screens[screen] = Builder.load_file(filenames[screen])
-        self._fill_action_bar()  
-        return self.screens
+        self._fill_action_bar()
 
     def _fill_action_bar(self):
         """create the action_bar and add screens as tabs"""

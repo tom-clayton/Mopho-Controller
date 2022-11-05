@@ -27,6 +27,11 @@ class SynthManager(object):
             else:
                 self.synths[synth] = None
 
+    def set_channels(self, channels):
+        """Set synth's channel form given dict"""
+        for synth in channels:
+            self.synths[synth].channel = channels[synth]
+
     def is_patchable(self, synth):
         """Return true if given synth has the required details to allow
         patching"""
@@ -58,7 +63,11 @@ class SynthManager(object):
 
     def get_request(self, synth):
         """Return the patch request header for given synth"""
-        return self.synths[synth].patch_request   
+        return self.synths[synth].patch_request
+
+    def get_channel(self, synth):
+        """Return the channel for given synth"""
+        return self.synths[synth].channel
 
     @property
     def options_lists(self):
@@ -80,13 +89,13 @@ class SynthData(object):
         except KeyError:
             self.options = None
         
-        if all(map(lambda x: x in data, [
-                            'unpack function',
-                            'pack function',
-                            'receive header',
-                            'parameters'
-                            'patch request'
-                        ])):
+        if all((
+            'unpack function' in data,
+            'pack function' in data,
+            'receive header' in data,
+            'parameters' in data,
+            'patch request' in data
+        )):
             self.patchable = True
             self._load_patching_details(data)
         else:
@@ -101,10 +110,10 @@ class SynthData(object):
         self.n_parameters = data['parameters']
 
         if 'nrpn order' not in data:
-            self.nrpn_order = list(range(0, self.n_parameters)
+            self.nrpn_order = list(range(0, self.n_parameters))
         elif self.n_parameters > len(data['nrpn order']):
             self.nrpn_order = data['nrpn order']\
-                + list(range(len(data['nrpn order']), self.n_parameters)
+                + list(range(len(data['nrpn order']), self.n_parameters))
         elif self.n_parameters < len(data['nrpn order']):
             self.nrpn_order = data['nrpn order'][:self.n_parameters]
         else:

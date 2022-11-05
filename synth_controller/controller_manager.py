@@ -1,7 +1,7 @@
 
 from controllers import BaseController, RadioController,\
-                        RadioButton, TestController,\
-                        DropDownController
+                        RadioButton, DropDownController,\
+                        UtilityController
 
 
 class ControllerManager(object):
@@ -61,7 +61,7 @@ class ControllerManager(object):
 
         for utility controllers:
         bind to utility functions"""
-        print(len(self.controllers))
+        #print(len(self.controllers))
         
         for controller in self.controllers:
             if isinstance(controller, BaseController):
@@ -94,16 +94,16 @@ class ControllerManager(object):
 
             else: # UtilityController
                 controller.bind(
-                    on_load=lambda _, data: patch_manager.on_load(synth)
+                    on_load=lambda _, synth: patch_manager.on_load(synth)
                 )
                 controller.bind(
-                    on_save=lambda _, data: patch_manager.on_save(synth)
+                    on_save=lambda _, synth: patch_manager.on_save(synth)
                 )
                 controller.bind(
-                    on_send=lambda _, data: patch_manager.on_send(synth)
+                    on_send=lambda _, synth: patch_manager.on_send(synth)
                 )
                 controller.bind(
-                    on_receive=lambda _, data: patch_manager.on_receive(synth)
+                    on_receive=lambda _, synth: patch_manager.on_receive(synth)
                 )
 
 
@@ -116,7 +116,8 @@ class ControllerManager(object):
 
     def _collect_controllers(self, widget, _):
         """add controller to list if is one"""
-        if isinstance(widget, BaseController):
+        if isinstance(widget, BaseController)\
+           or isinstance(widget, UtilityController):
             self.controllers.append(widget)
 
     def _set_property_if_type(self, widget, value, prop, w_type):
@@ -150,9 +151,11 @@ class ControllerManager(object):
         
     def set_controller_value(self, channel, nrpn, value):
         """sets value on given controller"""
-        print(f"incoming: {channel} {nrpn} {value}")
+        #print(f"incoming: {channel} {nrpn} {value}")
         for controller in self.controllers:
-            if controller.channel == channel and controller.nrpn == nrpn:
+            if isinstance(controller, BaseController)\
+               and controller.channel == channel\
+               and controller.nrpn == nrpn:
                 controller.set_without_sending_midi(value)
 
     def set_controller_values(self, synth, nrpn_order, data):
