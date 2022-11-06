@@ -116,6 +116,7 @@ class Midi(object):
         
     def send_nrpn(self, channel, controller, value):
         """send a nrpn control change midi message for given values"""
+        print(channel,controller, value)
         self.client.event_output(
             NonRegisteredParameterChangeEvent(channel, controller, value)
         )

@@ -29,6 +29,13 @@ class ControllerManager(object):
             self._walk_tree(
                         screen,
                         self._propigate_property_if_type,
+                        'default',
+                        'synth',
+                        UtilityController
+                    )
+            self._walk_tree(
+                        screen,
+                        self._propigate_property_if_type,
                         None,
                         'nrpn',
                         BaseController

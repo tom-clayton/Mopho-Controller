@@ -12,6 +12,7 @@ class SynthManager(object):
         self.synths_dir = os.path.join(os.getcwd(), SYNTHS_DIR)
         self.settings_files = [f[:-5] for f in os.listdir(self.synths_dir)\
                                if f[-5:] == '.json']
+        print(self.settings_files)
         self._load_synths(synths)
 
     def _load_synths(self, synths):
@@ -26,6 +27,7 @@ class SynthManager(object):
                         ) 
             else:
                 self.synths[synth] = None
+        print(self.synths)
 
     def set_channels(self, channels):
         """Set synth's channel form given dict"""

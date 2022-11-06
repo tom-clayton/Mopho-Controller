@@ -3,7 +3,8 @@ from ui import MainScreen
 from setup_manager import SetupManager, NoSetupException
 from controller_manager import ControllerManager
 from synth_manager import SynthManager
-from midi_test import Midi
+#from midi_test import Midi
+from midi import Midi
 from error_handler import ErrorHandler
 from patch_manager import PatchManager
 from strings import *

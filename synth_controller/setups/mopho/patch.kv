@@ -1,7 +1,19 @@
 BoxLayout:
+    synth: 'mopho'
     UtilityController:
-        synth: 'mopho'
+        
         Button:
             text: 'receive'
             on_press: self.parent.receive_patch()
-        
+    UtilityController:
+        Button:
+            text: 'send'
+            on_press: self.parent.send_patch()
+    UtilityController:
+        Button:
+            text: 'load'
+            on_press: self.parent.load_patch()
+    UtilityController:
+        Button:
+            text: 'save'
+            on_press: self.parent.save_patch()
