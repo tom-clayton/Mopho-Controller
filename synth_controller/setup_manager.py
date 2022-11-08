@@ -80,7 +80,7 @@ class SetupManager(object):
                 channels[synth] = None
                 synth_missing = True
             else:
-                channels[synth] = self.setup_settings['synth channels'][synth]
+                channels[synth] = self.setup_settings['synth channels'][synth] - 1
 
         if synth_missing:
             self.ui.channel_selection_popup(channels)

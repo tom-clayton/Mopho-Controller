@@ -60,8 +60,10 @@ class Midi(object):
         while True:
             event = self.client.event_input()
             if event.type == EventType.CONTROLLER:
+                print(repr(event))
                 self._parse_cc(event)
             elif event.type == EventType.SYSEX:
+                print(repr(event))
                 self._parse_sysex(event)
      
     def _parse_cc(self, event):
@@ -118,33 +120,10 @@ class Midi(object):
         self.client.drain_output()
         
     def send_nrpn(self, channel, controller, value):
-        """send a nrpn control change midi message for given values"""
-        print(channel, controller, value)
-        events = []
-        self.client.event_output(ControlChangeEvent(
-            channel,
-            MSG_PARAM_MSB,
-            controller & MSG_MSB_MASK >> 7,
+        """send a nrpn control change midi message for given values"""            
+        self.client.event_output(
+            NonRegisteredParameterChangeEvent(channel, controller, value)
         )
-        self.client.event_output(ControlChangeEvent(
-            channel,
-            MSG_PARAM_LSB,
-            controller & MSG_LSB_MASK,
-        )
-        self.client.event_output(ControlChangeEvent(
-            channel,
-            MSG_VALUE_MSB,
-            value & MSG_MSB_MASK >> 7,
-        )
-        self.client.event_output(ControlChangeEvent(
-            channel,
-            MSG_VALUE_LSB,
-            value & MSG_LSB_MASK,
-        )
-                                 
-        #self.client.event_output(
-        #    NonRegisteredParameterChangeEvent(channel, controller, value)
-        #)
         self.client.drain_output()
         
     def send_sysex(self, data):
