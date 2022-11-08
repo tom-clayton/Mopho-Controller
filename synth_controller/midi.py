@@ -4,11 +4,14 @@ from alsa_midi import SequencerClient, EventType, ControlChangeEvent,\
 
 import threading
 
-MSG_SYSEX_END   = 0xf7
-MSG_PARAM_MSB    = 0x63
-MSG_PARAM_LSB    = 0x62
-MSG_VALUE_MSB     = 0x06
-MSG_VALUE_LSB     = 0x26
+MSG_SYSEX_END = 0xf7
+MSG_PARAM_MSB = 0x63
+MSG_PARAM_LSB = 0x62
+MSG_VALUE_MSB = 0x06
+MSG_VALUE_LSB = 0x26
+MSG_MSB_MASK = 0x3f80
+MSG_LSB_MASK = 0x7f
+
 
 class Midi(object):
     def __init__(self, connection=None):
@@ -22,7 +25,7 @@ class Midi(object):
         )
         input_thread.start()
 
-    def set_callbacks(self, cc_callback=None, sysex_callback=None,):
+    def set_callbacks(self, cc_callback=None, sysex_callback=None):
         """Set the midi in callbacks"""
         self.cc_callback = cc_callback
         self.sysex_callback = sysex_callback
@@ -116,10 +119,32 @@ class Midi(object):
         
     def send_nrpn(self, channel, controller, value):
         """send a nrpn control change midi message for given values"""
-        print(channel,controller, value)
-        self.client.event_output(
-            NonRegisteredParameterChangeEvent(channel, controller, value)
+        print(channel, controller, value)
+        events = []
+        self.client.event_output(ControlChangeEvent(
+            channel,
+            MSG_PARAM_MSB,
+            controller & MSG_MSB_MASK >> 7,
         )
+        self.client.event_output(ControlChangeEvent(
+            channel,
+            MSG_PARAM_LSB,
+            controller & MSG_LSB_MASK,
+        )
+        self.client.event_output(ControlChangeEvent(
+            channel,
+            MSG_VALUE_MSB,
+            value & MSG_MSB_MASK >> 7,
+        )
+        self.client.event_output(ControlChangeEvent(
+            channel,
+            MSG_VALUE_LSB,
+            value & MSG_LSB_MASK,
+        )
+                                 
+        #self.client.event_output(
+        #    NonRegisteredParameterChangeEvent(channel, controller, value)
+        #)
         self.client.drain_output()
         
     def send_sysex(self, data):

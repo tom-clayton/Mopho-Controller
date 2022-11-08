@@ -1,4 +1,6 @@
 
+# Loads and displays patch data from sysex file
+
 #import sys
 #print(sys.path)
 
