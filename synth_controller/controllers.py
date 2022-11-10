@@ -150,6 +150,7 @@ class RadioController(BaseController):
     def add_buttons(self, buttons):
         """keep reference to buttons."""
         pass
+    
     def sub_setup(self):
         self.buttons = ToggleButtonBehavior.get_widgets(self.group)
         for button in self.buttons:
@@ -260,7 +261,7 @@ class DropDownController(BaseController):
         self.dropdown.bind(on_dismiss=self._on_dismiss)
 
     def _on_dismiss(self, button):
-        """display selected option if dropdwon is dismissed"""
+        """display selected option if dropdown is dismissed"""
         self.display_selected()
 
     def _select_option(self, i, option):
@@ -278,7 +279,6 @@ class DropDownController(BaseController):
                         except AttributeError:
                             self.value = extra_option.minimum
                         
-
     def add_options(self, options):
         """sets list of options on the dropdown"""
         self.options = options

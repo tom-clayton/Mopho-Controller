@@ -414,6 +414,7 @@ BoxLayout:
                         name: 'LFO 1 Destination:'
                         nrpn: 40
                         option_list: 'destinations'
+                        grey_on_zero: True
                     BoxLayout:
                         BoxLayout:
                             orientation: 'vertical'                            
@@ -452,6 +453,7 @@ BoxLayout:
                         name: 'LFO 2 Destination:'
                         nrpn: 45
                         option_list: 'destinations'
+                        grey_on_zero: True
                     BoxLayout:
                         BoxLayout:
                             #shape, time, key, time, amount
@@ -492,6 +494,7 @@ BoxLayout:
                         name: 'LFO 3 Destination:'
                         nrpn: 50
                         option_list: 'destinations'
+                        grey_on_zero: True
                     BoxLayout:
                         BoxLayout:
                             #shape, time, key, time, amount
@@ -532,6 +535,7 @@ BoxLayout:
                         name: 'LFO 4 Destination:'
                         nrpn: 55
                         option_list: 'destinations'
+                        grey_on_zero: True
                     BoxLayout:
                         BoxLayout:
                             #shape, time, key, time, amount
@@ -564,9 +568,3 @@ BoxLayout:
                         VSlideController:
                             name: 'Amount'
                             nrpn: 54
-                            
-##    TestController:
-##        size_hint_y: 0.1
-##        id: tester
-##        Button:
-##            on_press: tester.run_test()
